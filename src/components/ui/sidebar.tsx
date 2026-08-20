@@ -23,7 +23,7 @@ function SidebarProvider({ children, defaultOpen = true }: { children: React.Rea
 }
 
 function Sidebar({ className, children, ...props }: React.ComponentProps<"div">) {
-  const { open, setOpen } = useSidebar()
+  const { open } = useSidebar()
   return (
     <aside
       data-slot="sidebar"

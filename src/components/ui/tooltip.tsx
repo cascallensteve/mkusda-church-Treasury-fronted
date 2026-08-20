@@ -4,10 +4,6 @@ import { cn } from "@/lib/utils"
 
 const TooltipContext = React.createContext<{ open: boolean } | null>(null)
 
-function useTooltip() {
-  return React.useContext(TooltipContext)
-}
-
 function TooltipProvider({ children }: { children: React.ReactNode }) {
   return children
 }
@@ -22,7 +18,10 @@ function Tooltip({ children, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function TooltipTrigger({ children, ...props }: React.ComponentProps<"button">) {
+function TooltipTrigger({ children, asChild = false, ...props }: React.ComponentProps<"div"> & { asChild?: boolean }) {
+  if (asChild && React.isValidElement(children)) {
+    return children
+  }
   return <div data-slot="tooltip-trigger" {...props}>{children}</div>
 }
 

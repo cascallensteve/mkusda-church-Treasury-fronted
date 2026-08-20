@@ -6,15 +6,11 @@ import {
   TrendingUp, 
   TrendingDown, 
   Building2,
-  HandCoins,
   Wallet,
-  Users,
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react'
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -30,7 +26,6 @@ import {
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { StatCard } from '@/components/stat-card'
 
 import { CHURCH, formatKES } from '@/lib/data'
 
@@ -196,7 +191,7 @@ export default function DashboardPage() {
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       labelLine={false}
                     >
-                      {fundDistribution.map((entry, index) => (
+                      {fundDistribution.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>

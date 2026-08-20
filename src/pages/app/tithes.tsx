@@ -11,17 +11,12 @@ import {
   Printer,
   ArrowLeft,
   Receipt,
-  ChevronDown,
   Calendar,
   User,
   Mail,
   Phone,
-  MapPin,
-  X,
   CheckCircle2,
-  AlertCircle,
-  Loader2,
-  FileText
+  Loader2
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -56,7 +51,6 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { CHURCH, formatKES } from '@/lib/data'
 
@@ -220,15 +214,6 @@ export default function TithePage() {
       failed: 'bg-rose-100 text-rose-700 border-rose-200'
     }
     return <Badge className={styles[status as keyof typeof styles]}>{status}</Badge>
-  }
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      completed: 'bg-emerald-500',
-      pending: 'bg-amber-500',
-      failed: 'bg-rose-500'
-    }
-    return colors[status as keyof typeof colors] || 'bg-gray-500'
   }
 
   const getPaymentMethodIcon = (method: string) => {
@@ -602,7 +587,7 @@ export default function TithePage() {
                     <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50">
                       <Avatar className="h-14 w-14 bg-indigo-100">
                         <AvatarFallback className="text-lg text-indigo-600">
-                          {selectedTithe.memberName.split(' ').map(n => n[0]).join('')}
+                          {selectedTithe.memberName.split(' ').map((n: string) => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">

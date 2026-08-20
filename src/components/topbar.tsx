@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell, Search, Wifi, WifiOff } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ import {
 import { CHURCH, notifications } from '@/lib/data'
 
 export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
+  const navigate = useNavigate()
   const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
@@ -32,6 +34,10 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
       window.removeEventListener('offline', handleOffline)
     }
   }, [])
+
+  const handleSignOut = () => {
+    navigate('/app/logout')
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur md:px-6">
@@ -108,7 +114,9 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
               <DropdownMenuItem>Profile</DropdownMenuItem>
               <DropdownMenuItem>Preferences</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Sign out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>
+                Sign out
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -24,10 +24,29 @@ function Dialog({ children, open, onOpenChange }: { children: React.ReactNode; o
   )
 }
 
-function DialogTrigger({ children, ...props }: React.ComponentProps<"button">) {
+function DialogTrigger({ children, asChild = false, onClick, ...props }: React.ComponentProps<"button"> & { asChild?: boolean }) {
   const { setOpen } = useDialog()
+
+  if (asChild && React.isValidElement(children)) {
+    const child = children as React.ReactElement<React.HTMLAttributes<HTMLElement>>
+    return React.cloneElement(child, {
+      ...props,
+      onClick: (event: React.MouseEvent<HTMLElement>) => {
+        child.props.onClick?.(event)
+        onClick?.(event as React.MouseEvent<HTMLButtonElement>)
+        setOpen(true)
+      },
+    } as React.HTMLAttributes<HTMLElement>)
+  }
+
   return (
-    <button onClick={() => setOpen(true)} {...props}>
+    <button
+      onClick={(event) => {
+        onClick?.(event)
+        setOpen(true)
+      }}
+      {...props}
+    >
       {children}
     </button>
   )

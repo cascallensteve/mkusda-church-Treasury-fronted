@@ -5,6 +5,7 @@ import LandingPage from '@/pages/landing'
 import LoginPage from '@/pages/login'
 import ForgotPasswordPage from '@/pages/forgot-password'
 import NotFoundPage from '@/pages/app/NotFound'
+import LogoutPage from '@/pages/app/logout'
 import AppLayout from '@/pages/app/layout'
 import DashboardPage from '@/pages/app/dashboard'
 import TreasuryPage from '@/pages/app/treasury'
@@ -92,9 +93,10 @@ export default function App() {
           <AppLayout />
         </ProtectedRoute>
       }>
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="treasury" element={<TreasuryPage />} />
-        <Route path="members" element={<MembersPage />} />
+      <Route path="dashboard" element={<DashboardPage />} />
+      <Route path="logout" element={<LogoutPage />} />
+      <Route path="treasury" element={<TreasuryPage />} />
+      <Route path="members" element={<MembersPage />} />
         <Route path="tithes" element={<TithesPage />} />
         <Route path="offerings" element={<OfferingsPage />} />
         <Route path="departments" element={<DepartmentsPage />} />

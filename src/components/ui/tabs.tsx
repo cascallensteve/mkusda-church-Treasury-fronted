@@ -13,7 +13,16 @@ function useTabs() {
   return context
 }
 
-function Tabs({ defaultValue, value, onValueChange, className, children, ...props }: React.ComponentProps<"div"> & { defaultValue?: string }) {
+type TabsProps = Omit<
+  React.ComponentProps<"div">,
+  "value" | "defaultValue" | "onChange"
+> & {
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string) => void
+}
+
+function Tabs({ defaultValue, value, onValueChange, className, children, ...props }: TabsProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue || "")
   const currentValue = value ?? internalValue
   const setValue = (v: string) => {
@@ -42,14 +51,18 @@ function TabsList({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function TabsTrigger({ value, className, ...props }: React.ComponentProps<"button"> & { value: string }) {
+function TabsTrigger({ value, className, onClick, ...props }: Omit<React.ComponentProps<"button">, "value"> & { value: string }) {
   const { value: currentValue, setValue } = useTabs()
   const isActive = currentValue === value
   return (
     <button
       data-slot="tabs-trigger"
+      type="button"
       data-state={isActive ? "active" : "inactive"}
-      onClick={() => setValue(value)}
+      onClick={(event) => {
+        onClick?.(event)
+        setValue(value)
+      }}
       className={cn(
         "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
         className

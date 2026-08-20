@@ -1,7 +1,7 @@
 'use client'
 
 import { Link } from 'react-router-dom'
-import { Home, ArrowLeft, Search, FileQuestion, Compass, BookOpen } from 'lucide-react'
+import { Home, ArrowLeft, FileQuestion, Compass, BookOpen, HandCoins, Gift, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'

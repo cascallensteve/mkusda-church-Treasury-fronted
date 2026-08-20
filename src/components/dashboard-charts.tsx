@@ -13,7 +13,6 @@ import {
   PieChart,
   XAxis,
   YAxis,
-  ResponsiveContainer,
 } from 'recharts'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

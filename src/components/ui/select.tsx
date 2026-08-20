@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils"
 const SelectContext = React.createContext<{
   value: string
   setValue: (value: string) => void
+  open: boolean
+  setOpen: (open: boolean) => void
 } | null>(null)
 
 function useSelect() {
@@ -13,15 +15,26 @@ function useSelect() {
   return context
 }
 
-function Select({ value, onValueChange, defaultValue, children, ...props }: React.ComponentProps<"div"> & { defaultValue?: string }) {
+type SelectProps = Omit<
+  React.ComponentProps<"div">,
+  "value" | "defaultValue" | "onChange"
+> & {
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string) => void
+}
+
+function Select({ value, onValueChange, defaultValue, children, ...props }: SelectProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue || "")
+  const [open, setOpen] = React.useState(false)
   const currentValue = value ?? internalValue
   const setValue = (v: string) => {
     setInternalValue(v)
     onValueChange?.(v)
+    setOpen(false)
   }
   return (
-    <SelectContext.Provider value={{ value: currentValue, setValue }}>
+    <SelectContext.Provider value={{ value: currentValue, setValue, open, setOpen }}>
       <div data-slot="select" {...props}>
         {children}
       </div>
@@ -29,11 +42,17 @@ function Select({ value, onValueChange, defaultValue, children, ...props }: Reac
   )
 }
 
-function SelectTrigger({ className, children, ...props }: React.ComponentProps<"button">) {
-  const { value } = useSelect()
+function SelectTrigger({ className, children, onClick, ...props }: React.ComponentProps<"button">) {
+  const { open, setOpen } = useSelect()
   return (
     <button
       data-slot="select-trigger"
+      type="button"
+      aria-expanded={open}
+      onClick={(event) => {
+        onClick?.(event)
+        setOpen(!open)
+      }}
       className={cn(
         "flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
         className

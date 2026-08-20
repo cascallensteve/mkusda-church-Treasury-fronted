@@ -22,21 +22,26 @@ function ChartContainer({ className, config, children, ...props }: React.Compone
   )
 }
 
-function ChartLegend({ className, ...props }: React.ComponentProps<"div">) {
+function ChartLegend({ className, content, ...props }: Omit<React.ComponentProps<"div">, "content"> & { content?: React.ReactNode }) {
   return (
     <div
       data-slot="chart-legend"
       className={cn("flex items-center justify-center gap-4 text-sm", className)}
       {...props}
-    />
+    >
+      {content}
+    </div>
   )
 }
 
-function ChartLegendContent({ nameKey }: { nameKey?: string }) {
+function ChartLegendContent({ className, nameKey, ...props }: React.ComponentProps<"div"> & { nameKey?: string }) {
   const { config } = useChart()
   if (!config) return null
   return (
-    <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+    <div
+      className={cn("flex flex-wrap items-center justify-center gap-4 text-sm", className)}
+      {...props}
+    >
       {Object.entries(config).map(([key, item]) => (
         <div key={key} className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -47,11 +52,20 @@ function ChartLegendContent({ nameKey }: { nameKey?: string }) {
   )
 }
 
-function ChartTooltip({ content, ...props }: React.ComponentProps<"div"> & { content?: React.ReactNode }) {
+function ChartTooltip({ content, ...props }: Omit<React.ComponentProps<"div">, "content"> & { content?: React.ReactNode }) {
   return <div data-slot="chart-tooltip" {...props}>{content}</div>
 }
 
-function ChartTooltipContent({ formatter, labelFormatter, ...props }: React.ComponentProps<"div"> & { formatter?: (value: unknown) => string; labelFormatter?: (label: string) => string }) {
+function ChartTooltipContent({
+  formatter,
+  labelFormatter,
+  nameKey,
+  ...props
+}: React.ComponentProps<"div"> & {
+  formatter?: (value: unknown) => string
+  labelFormatter?: (label: string) => string
+  nameKey?: string
+}) {
   return <div data-slot="chart-tooltip-content" {...props} />
 }
 

@@ -60,7 +60,7 @@ function SheetOverlay({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function SheetContent({ className, side = "right", children, ...props }: React.ComponentProps<"div"> & { side?: "top" | "right" | "bottom" | "left" }) {
-  const { open, setOpen } = useSheet()
+  const { open } = useSheet()
   if (!open) return null
 
   const sideClasses = {

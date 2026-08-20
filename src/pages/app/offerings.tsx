@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
-  TrendingUp, 
   Plus, 
   Search, 
-  Filter, 
   Download, 
   Eye,
   Printer,
@@ -14,26 +12,19 @@ import {
   User,
   Mail,
   Phone,
-  X,
   CheckCircle2,
-  AlertCircle,
   Loader2,
-  FileText,
   ArrowLeft,
   Receipt,
   Church,
-  PiggyBank,
   Gift,
   Heart,
   DollarSign,
-  Wallet,
   Building2,
-  Users,
   BarChart3,
   Clock,
   Sparkles,
-  Crown,
-  Star
+  Crown
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -41,7 +32,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -69,7 +59,6 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Progress } from '@/components/ui/progress'
 
 import { CHURCH, formatKES } from '@/lib/data'
 
@@ -182,7 +171,6 @@ export default function OfferingPage() {
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false)
   const [selectedOffering, setSelectedOffering] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('all')
 
   // Form state
   const [formData, setFormData] = useState({

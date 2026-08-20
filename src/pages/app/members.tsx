@@ -1,26 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
-  Users, 
-  Plus, 
   Search, 
   Download, 
   Eye,
   UserPlus,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  User,
   CheckCircle2,
   Loader2,
   ArrowLeft,
   Edit,
-  Trash2,
-  DollarSign,
-  Clock
+  Trash2
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { HandCoins, ShieldCheck, TrendingUp, Users, FileBarChart, ArrowRight, CheckCircle2, Building2, Sparkles } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { ArrowRight, Sparkles } from 'lucide-react'
+import { motion, type Variants } from 'framer-motion'
 
 import { Button } from '@/components/ui/button'
 
@@ -9,12 +9,12 @@ import { CHURCH } from '@/lib/data'
 
 export default function LandingPage() {
   // Animation variants
-  const fadeInUp = {
+  const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
   }
 
-  const staggerContainer = {
+  const staggerContainer: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,

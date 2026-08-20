@@ -9,8 +9,7 @@ import {
   EyeOff,
   ArrowRight,
   CheckCircle2,
-  KeyRound,
-  User
+  KeyRound
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -40,7 +39,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loginSuccess, setLoginSuccess] = useState(false)
 
-  const [loginMethod, setLoginMethod] = useState('email')
+  const [, setLoginMethod] = useState('email')
 
 
   const handleEmailSubmit = async (

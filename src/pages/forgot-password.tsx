@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Mail,
   ArrowLeft,
@@ -18,7 +18,6 @@ import { Label } from '@/components/ui/label'
 import { CHURCH } from '@/lib/data'
 
 export default function ForgotPasswordPage() {
-  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')

@@ -24,13 +24,29 @@ function DropdownMenu({ children, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function DropdownMenuTrigger({ children, ...props }: React.ComponentProps<"button">) {
+function DropdownMenuTrigger({ children, asChild = false, onClick, ...props }: React.ComponentProps<"button"> & { asChild?: boolean }) {
   const { open, setOpen } = useDropdownMenu()
+
+  if (asChild && React.isValidElement(children)) {
+    const child = children as React.ReactElement<React.HTMLAttributes<HTMLElement>>
+    return React.cloneElement(child, {
+      ...props,
+      onClick: (event: React.MouseEvent<HTMLElement>) => {
+        child.props.onClick?.(event)
+        onClick?.(event as React.MouseEvent<HTMLButtonElement>)
+        setOpen(!open)
+      },
+    } as React.HTMLAttributes<HTMLElement>)
+  }
+
   return (
     <button
       data-slot="dropdown-menu-trigger"
       aria-expanded={open}
-      onClick={() => setOpen(!open)}
+      onClick={(event) => {
+        onClick?.(event)
+        setOpen(!open)
+      }}
       {...props}
     >
       {children}
