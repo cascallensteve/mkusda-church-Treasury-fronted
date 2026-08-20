@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import LandingPage from '@/pages/landing'
 import LoginPage from '@/pages/login'
 import ForgotPasswordPage from '@/pages/forgot-password'
+import NotFoundPage from '@/pages/app/NotFound'
 import AppLayout from '@/pages/app/layout'
 import DashboardPage from '@/pages/app/dashboard'
 import TreasuryPage from '@/pages/app/treasury'
@@ -108,7 +109,7 @@ export default function App() {
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
