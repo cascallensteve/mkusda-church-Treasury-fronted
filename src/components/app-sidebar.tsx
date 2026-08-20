@@ -85,7 +85,7 @@ export function AppSidebar() {
           <img
             src="https://res.cloudinary.com/dqvsjtkqw/image/upload/v1751876492/image-removebg-preview_hss6vx.png"
             alt="Logo"
-            className="h-10 w-10 object-contain shrink-0"
+            className="h-12 w-12 object-contain shrink-0"
           />
           {!collapsed && (
             <div className="flex flex-col leading-tight">
@@ -97,10 +97,10 @@ export function AppSidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="hidden size-7 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:flex"
+          className="hidden size-8 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:flex"
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
+          {collapsed ? <ChevronRight className="size-5" /> : <ChevronLeft className="size-5" />}
         </Button>
       </div>
 
@@ -125,7 +125,7 @@ export function AppSidebar() {
                         collapsed && "justify-center"
                       )}
                     >
-                      <item.icon className="size-4 shrink-0" />
+                      <item.icon className="size-5 shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
                     </button>
                   </Link>
