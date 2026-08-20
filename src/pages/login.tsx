@@ -1,0 +1,376 @@
+'use client'
+
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  CheckCircle2,
+  KeyRound,
+  User
+} from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui/tabs'
+
+import { CHURCH } from '@/lib/data'
+
+
+export default function LoginPage() {
+
+  const navigate = useNavigate()
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [pin, setPin] = useState('')
+
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const [error, setError] = useState('')
+  const [loginSuccess, setLoginSuccess] = useState(false)
+
+  const [loginMethod, setLoginMethod] = useState('email')
+
+
+  const handleEmailSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+
+    e.preventDefault()
+
+    setError('')
+    setIsLoading(true)
+
+
+    setTimeout(() => {
+
+      if (email && password) {
+
+        localStorage.setItem(
+          'isAuthenticated',
+          'true'
+        )
+
+        localStorage.setItem(
+          'user',
+          JSON.stringify({
+            name: 'Anna Mushi',
+            role: 'Treasurer'
+          })
+        )
+
+
+        setLoginSuccess(true)
+
+
+        setTimeout(() => {
+          navigate('/app/dashboard')
+        }, 1500)
+
+
+      } else {
+
+        setError(
+          'Please enter your email and password'
+        )
+
+        setIsLoading(false)
+      }
+
+
+    }, 1000)
+
+  }
+
+
+
+  const handlePinSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+
+
+    e.preventDefault()
+
+    setError('')
+    setIsLoading(true)
+
+
+    setTimeout(() => {
+
+
+      if (pin.length === 4) {
+
+
+        localStorage.setItem(
+          'isAuthenticated',
+          'true'
+        )
+
+
+        localStorage.setItem(
+          'user',
+          JSON.stringify({
+            name: 'Anna Mushi',
+            role: 'Treasurer'
+          })
+        )
+
+
+        setLoginSuccess(true)
+
+
+        setTimeout(() => {
+          navigate('/app/dashboard')
+        }, 1500)
+
+
+      } else {
+
+
+        setError(
+          'Please enter a valid 4-digit PIN'
+        )
+
+        setIsLoading(false)
+
+      }
+
+
+    }, 800)
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
+      <div className="w-full max-w-6xl flex flex-col md:flex-row items-center gap-8 md:gap-12">
+        
+        {/* Left Side - Image */}
+        <div className="hidden md:flex flex-1 items-center justify-center">
+          <img 
+            src="https://res.cloudinary.com/djksfayfu/image/upload/v1787215259/Jan-Business_team_3-removebg-preview_marhol.png" 
+            alt="Team illustration" 
+            className="w-full max-w-lg h-auto object-contain"
+          />
+        </div>
+
+        {/* Right Side - Login Form */}
+        <div className="flex-1 w-full max-w-md">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <img 
+              src="https://res.cloudinary.com/dqvsjtkqw/image/upload/v1751876492/image-removebg-preview_hss6vx.png" 
+              alt="Logo" 
+              className="h-16 w-auto object-contain"
+            />
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-8 md:p-10">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800">Welcome Back</h2>
+              <p className="text-gray-500 text-sm mt-1">Sign in to continue to your dashboard</p>
+            </div>
+
+            {loginSuccess ? (
+              <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-10 h-10 text-green-500" />
+                </div>
+                <p className="text-lg font-semibold text-gray-800">Login Successful!</p>
+                <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
+              </div>
+            ) : (
+              <>
+                <Tabs 
+                  defaultValue="email" 
+                  className="w-full"
+                  onValueChange={(value) => setLoginMethod(value)}
+                >
+                  <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100 p-1 rounded-xl">
+                    <TabsTrigger 
+                      value="email" 
+                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-600 transition-all"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Email
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="pin" 
+                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-600 transition-all"
+                    >
+                      <KeyRound className="w-4 h-4 mr-2" />
+                      PIN
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="email">
+                    <form onSubmit={handleEmailSubmit} className="space-y-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-gray-700 font-medium">
+                          Email Address
+                        </Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all"
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Label htmlFor="password" className="text-gray-700 font-medium">
+                            Password
+                          </Label>
+                          <Link 
+                            to="/forgot-password" 
+                            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                          >
+                            Forgot password?
+                          </Link>
+                        </div>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="pl-10 pr-12 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all"
+                            disabled={isLoading}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {error && (
+                        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-200">
+                          {error}
+                        </div>
+                      )}
+
+                      <Button 
+                        type="submit" 
+                        className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center gap-2">
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Signing in...
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            Sign In
+                            <ArrowRight className="w-5 h-5" />
+                          </span>
+                        )}
+                      </Button>
+                    </form>
+                  </TabsContent>
+
+                  <TabsContent value="pin">
+                    <form onSubmit={handlePinSubmit} className="space-y-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="pin" className="text-gray-700 font-medium">
+                          Enter 4-Digit PIN
+                        </Label>
+                        <div className="relative">
+                          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <Input
+                            id="pin"
+                            type="password"
+                            placeholder="••••"
+                            maxLength={4}
+                            value={pin}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '')
+                              setPin(value.slice(0, 4))
+                            }}
+                            className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all text-center text-2xl tracking-widest"
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">Enter your 4-digit security PIN</p>
+                      </div>
+
+                      {error && (
+                        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-200">
+                          {error}
+                        </div>
+                      )}
+
+                      <Button 
+                        type="submit" 
+                        className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center gap-2">
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Verifying...
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            Verify PIN
+                            <ArrowRight className="w-5 h-5" />
+                          </span>
+                        )}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-500">
+                    Don't have an account?{' '}
+                    <a href="#" className="text-indigo-600 hover:text-indigo-800 font-medium">
+                      Contact Admin
+                    </a>
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <p className="text-center text-xs text-gray-400 mt-6">
+            &copy; {new Date().getFullYear()} {CHURCH.name}. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
