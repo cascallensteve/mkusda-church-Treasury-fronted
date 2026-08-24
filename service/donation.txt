@@ -1,0 +1,129 @@
+
+## Public Donation Endpoints
+
+These endpoints are **public** and do not require authentication. They are intended for the public donation page (`/donate`).
+
+---
+
+### List Public Donation Types
+
+#### `GET /api/donation/public/donation-types/`
+
+Retrieve all donation types available for public donations. No authentication required.
+
+**Success Response (200 OK):**
+
+```json
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "name": "Tithes",
+      "description": "Regular tithe contributions",
+      "created_at": "2026-08-24T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Offerings",
+      "description": "General offerings",
+      "created_at": "2026-08-24T12:05:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### Submit Donation
+
+#### `POST /api/donation/public/submit/`
+
+Submit a public donation. No authentication required.
+
+**Request:**
+
+```json
+{
+  "full_name": "John Doe",
+  "email": "john@example.com",
+  "phone": "+254700000000",
+  "donation_type": "tithe",
+  "amount": 1000,
+  "payment_method": "mpesa",
+  "message": "God bless"
+}
+```
+
+**Field Descriptions:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `full_name` | string | Yes | Donor full name |
+| `email` | string | No | Donor email address |
+| `phone` | string | No | Donor phone number |
+| `donation_type` | string | Yes | Donation type name or ID |
+| `amount` | number | Yes | Donation amount in KES |
+| `payment_method` | string | Yes | Payment method: `mpesa`, `card`, `bank` |
+| `message` | string | No | Optional donation message |
+
+**Success Response (201 Created):**
+
+```json
+{
+  "id": 1,
+  "full_name": "John Doe",
+  "email": "john@example.com",
+  "phone": "+254700000000",
+  "donation_type": "tithe",
+  "amount": "1000.00",
+  "payment_method": "mpesa",
+  "message": "God bless",
+  "reference": "DNT-20260824-0001",
+  "created_at": "2026-08-24T12:30:00Z"
+}
+```
+
+**Error Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Invalid donation data.",
+  "errors": {
+    "amount": ["Amount must be greater than 0."]
+  }
+}
+```
+
+---
+
+### Data Model
+
+#### Donation
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | Integer | Primary key |
+| `full_name` | String (255) | Donor full name |
+| `email` | String (255) | Donor email (optional) |
+| `phone` | String (255) | Donor phone (optional) |
+| `donation_type` | String (255) | Donation type name |
+| `amount` | Decimal | Donation amount in KES |
+| `payment_method` | String (50) | Payment method used |
+| `message` | Text | Optional message |
+| `reference` | String (100) | Unique donation reference |
+| `created_at` | DateTime | Timestamp of donation |
+
+---
+
+## Notes
+
+- No `Authorization` header is required for these endpoints.
+- CORS is configured to allow public access from the frontend origin.
+- Admin donation type management endpoints remain under `/api/donation/donation-types/` and require admin authentication.
+
+---
+
+*Generated on 2026-08-24*

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { HandCoins, Plus, Search, Loader2, CheckCircle2, Edit, Trash2 } from 'lucide-react'
+import { HandCoins, Plus, Search, Loader2, CheckCircle2, Edit, Trash2, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -144,10 +144,12 @@ export default function DonationTypesPage() {
         title="Donation Types"
         description="Manage donation categories and types"
         actions={
-          <Button onClick={() => { setSelectedType(null); setFormData({ name: '', description: '' }); setIsFormOpen(true) }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Donation Type
-          </Button>
+          !isFormOpen ? (
+            <Button onClick={() => { setSelectedType(null); setFormData({ name: '', description: '' }); setIsFormOpen(true) }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Donation Type
+            </Button>
+          ) : null
         }
       />
 
@@ -157,140 +159,147 @@ export default function DonationTypesPage() {
         <StatCard label="Last Updated" value={donationTypes[0] ? new Date(donationTypes[0].created_at).toLocaleDateString() : 'N/A'} icon={HandCoins} accent="amber" />
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle>All Donation Types</CardTitle>
-              <CardDescription>View and manage donation type categories</CardDescription>
+      {isFormOpen ? (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Button variant="outline" onClick={() => { setIsFormOpen(false); setSelectedType(null); setFormData({ name: '', description: '' }) }} className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+              <div>
+                <h2 className="text-lg font-semibold">{selectedType ? 'Edit Donation Type' : 'Add New Donation Type'}</h2>
+                <p className="text-sm text-muted-foreground">{selectedType ? 'Update the donation type details below.' : 'Enter the donation type details below.'}</p>
+              </div>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search donation types..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-full sm:w-64"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            </div>
-          ) : filteredTypes.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              {searchTerm ? 'No donation types match your search.' : 'No donation types found. Create your first one!'}
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Created By</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTypes.map((type) => (
-                    <TableRow key={type.id}>
-                      <TableCell className="font-medium">{type.name}</TableCell>
-                      <TableCell className="text-gray-600">{type.description || '—'}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-sm">{type.created_by_name}</span>
-                          <span className="text-xs text-gray-500">{type.created_by_email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{new Date(type.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(type)}
-                            className="h-8 w-8 text-gray-600 hover:text-indigo-600"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => { setSelectedType(type); setIsDeleteDialogOpen(true) }}
-                            className="h-8 w-8 text-gray-600 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{selectedType ? 'Edit Donation Type' : 'Add Donation Type'}</DialogTitle>
-            <DialogDescription>
-              {selectedType ? 'Update the donation type details below.' : 'Create a new donation type category.'}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="e.g., Tithes, Offerings"
-                required
-                disabled={isSubmitting}
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Tithes, Offerings"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Optional description for this donation type"
+                  rows={3}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:ring-indigo-400 focus:outline-none"
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => { setIsFormOpen(false); setSelectedType(null); setFormData({ name: '', description: '' }) }} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      {selectedType ? 'Saving...' : 'Creating...'}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      {selectedType ? 'Save Changes' : 'Create Type'}
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle>All Donation Types</CardTitle>
+                <CardDescription>View and manage donation type categories</CardDescription>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search donation types..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 w-full sm:w-64"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Optional description for this donation type"
-                rows={3}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:ring-indigo-400 focus:outline-none"
-                disabled={isSubmitting}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    {selectedType ? 'Saving...' : 'Creating...'}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    {selectedType ? 'Save Changes' : 'Create Type'}
-                  </span>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : filteredTypes.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                {searchTerm ? 'No donation types match your search.' : 'No donation types found. Create your first one!'}
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Created By</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTypes.map((type) => (
+                      <TableRow key={type.id}>
+                        <TableCell className="font-medium">{type.name}</TableCell>
+                        <TableCell className="text-gray-600">{type.description || '—'}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-sm">{type.created_by_name}</span>
+                            <span className="text-xs text-gray-500">{type.created_by_email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{new Date(type.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(type)}
+                              className="h-8 w-8 text-gray-600 hover:text-indigo-600"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => { setSelectedType(type); setIsDeleteDialogOpen(true) }}
+                              className="h-8 w-8 text-gray-600 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">

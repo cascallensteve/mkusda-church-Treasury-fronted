@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Heart,
@@ -19,17 +19,13 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { CHURCH } from '@/lib/data'
-import { submitDonation } from '@/lib/api'
+import { getPublicDonationTypes, submitDonation } from '@/lib/api'
 
-const DONATION_TYPES = [
-  { value: 'tithe', label: 'Tithe' },
-  { value: 'offering', label: 'Offering' },
-  { value: 'building_fund', label: 'Building Fund' },
-  { value: 'mission', label: 'Mission / Outreach' },
-  { value: 'other', label: 'Other' },
-]
-
-const QUICK_AMOUNTS = [500, 1000, 2000, 5000]
+type DonationTypeOption = {
+  id: number
+  name: string
+  description: string
+}
 
 const PAYMENT_METHODS = [
   { value: 'mpesa', label: 'M-Pesa', icon: Smartphone },
@@ -37,12 +33,15 @@ const PAYMENT_METHODS = [
   { value: 'bank', label: 'Bank Transfer', icon: Landmark },
 ]
 
+const QUICK_AMOUNTS = [500, 1000, 2000, 5000]
+
 export default function PublicDonationPage() {
+  const [donationTypes, setDonationTypes] = useState<DonationTypeOption[]>([])
   const [form, setForm] = useState({
     full_name: '',
     email: '',
     phone: '',
-    donation_type: 'tithe',
+    donation_type: '',
     amount: '',
     payment_method: 'mpesa',
     message: '',
@@ -50,6 +49,25 @@ export default function PublicDonationPage() {
   const [submitting, setSubmitting] = useState(false)
   const [reference, setReference] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [loadingTypes, setLoadingTypes] = useState(true)
+
+  useEffect(() => {
+    const fetchTypes = async () => {
+      try {
+        const data = await getPublicDonationTypes()
+        const types = (data.results || data) as DonationTypeOption[]
+        setDonationTypes(types)
+        if (types.length > 0 && !form.donation_type) {
+          setForm(prev => ({ ...prev, donation_type: String(types[0].id) }))
+        }
+      } catch (err: any) {
+        toast.error(err?.body?.detail || err?.message || 'Failed to load donation types')
+      } finally {
+        setLoadingTypes(false)
+      }
+    }
+    fetchTypes()
+  }, [])
 
   const setField = (key: string, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -62,6 +80,10 @@ export default function PublicDonationPage() {
     const amount = Number(form.amount)
     if (!form.full_name.trim()) {
       setError('Please enter your name.')
+      return
+    }
+    if (!form.donation_type) {
+      setError('Please select a donation type.')
       return
     }
     if (!amount || amount <= 0) {
@@ -238,22 +260,28 @@ export default function PublicDonationPage() {
 
                     <div className="space-y-2">
                       <Label className="text-gray-700 font-medium">Donation Type</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {DONATION_TYPES.map((type) => (
-                          <button
-                            key={type.value}
-                            type="button"
-                            onClick={() => setField('donation_type', type.value)}
-                            className={`rounded-full px-4 py-2 text-sm font-medium border transition-all ${
-                              form.donation_type === type.value
-                                ? 'bg-indigo-600 text-white border-indigo-600'
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
-                            }`}
-                          >
-                            {type.label}
-                          </button>
-                        ))}
-                      </div>
+                      {loadingTypes ? (
+                        <div className="text-sm text-gray-500">Loading donation types...</div>
+                      ) : donationTypes.length === 0 ? (
+                        <div className="text-sm text-gray-500">No donation types available.</div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {donationTypes.map((type) => (
+                            <button
+                              key={type.id}
+                              type="button"
+                              onClick={() => setField('donation_type', String(type.id))}
+                              className={`rounded-full px-4 py-2 text-sm font-medium border transition-all ${
+                                form.donation_type === String(type.id)
+                                  ? 'bg-indigo-600 text-white border-indigo-600'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                              }`}
+                            >
+                              {type.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">

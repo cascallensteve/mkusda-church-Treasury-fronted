@@ -89,27 +89,44 @@ async function parseResponse(res: Response): Promise<any> {
   return body
 }
 
-// Public donation endpoint (no auth). Update this once the user provides the real API URL.
-const DONATION_API = import.meta.env.VITE_DONATION_API || 'https://churchppmkusdabackend.vercel.app/api/donations/'
+// Public donation endpoints (no auth)
+const PUBLIC_API = import.meta.env.VITE_API_BASE || '/api/auth'
 
-export async function submitDonation(payload: Record<string, any>): Promise<any> {
-  const res = await fetch(DONATION_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+async function publicRequest(url: string, options: RequestInit = {}): Promise<any> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  }
+
+  const res = await fetch(`${PUBLIC_API}${url}`, {
+    ...options,
+    headers,
   })
 
   const contentType = res.headers.get('content-type')
-  const body = contentType && contentType.includes('application/json') ? await res.json() : {}
+  const body = contentType && contentType.includes('application/json')
+    ? await res.json()
+    : {}
 
   if (!res.ok) {
-    const error = new Error(body.detail || body.message || 'Donation failed')
-    ;(error as any).body = body
+    const error = new Error(body.detail || body.message || 'Request failed')
     ;(error as any).status = res.status
+    ;(error as any).body = body
     throw error
   }
 
   return body
+}
+
+export async function getPublicDonationTypes(): Promise<any> {
+  return publicRequest('/donation/public/donation-types/')
+}
+
+export async function submitDonation(payload: Record<string, any>): Promise<any> {
+  return publicRequest('/donation/public/submit/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export const api = {
