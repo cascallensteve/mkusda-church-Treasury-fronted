@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import LandingPage from '@/pages/landing'
 import LoginPage from '@/pages/login'
 import ForgotPasswordPage from '@/pages/forgot-password'
+import ResetPasswordPage from '@/pages/reset-password'
 import NotFoundPage from '@/pages/app/NotFound'
 import LogoutPage from '@/pages/app/logout'
 import AppLayout from '@/pages/app/layout'
@@ -29,8 +30,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const token = localStorage.getItem('access_token')
     const auth = localStorage.getItem('isAuthenticated')
-    setIsAuthenticated(auth === 'true')
+    setIsAuthenticated(!!(token && auth === 'true'))
     setLoading(false)
   }, [])
 
@@ -54,8 +56,9 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const token = localStorage.getItem('access_token')
     const auth = localStorage.getItem('isAuthenticated')
-    setIsAuthenticated(auth === 'true')
+    setIsAuthenticated(!!(token && auth === 'true'))
     setLoading(false)
   }, [])
 
@@ -86,6 +89,11 @@ export default function App() {
       <Route path="/forgot-password" element={
         <PublicRoute>
           <ForgotPasswordPage />
+        </PublicRoute>
+      } />
+      <Route path="/reset-password" element={
+        <PublicRoute>
+          <ResetPasswordPage />
         </PublicRoute>
       } />
       <Route path="/app" element={

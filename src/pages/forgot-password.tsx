@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import {
   Mail,
   ArrowLeft,
   CheckCircle2,
-  AlertCircle,
   Send,
   Loader2
 } from 'lucide-react'
@@ -16,39 +16,41 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 import { CHURCH } from '@/lib/data'
+import { api } from '@/lib/api'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [submittedEmail, setSubmittedEmail] = useState('')
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError('')
+    setSuccess(false)
     setIsLoading(true)
 
-    setTimeout(() => {
-      if (email && email.includes('@')) {
-        setSubmittedEmail(email)
-        setSuccess(true)
-        setIsLoading(false)
-      } else {
-        setError('Please enter a valid email address')
-        setIsLoading(false)
-      }
-    }, 1500)
+    try {
+      await api.forgotPassword(email)
+      setSuccess(true)
+      toast.success('Reset link sent to your email')
+    } catch (err: any) {
+      const msg = err?.body?.detail || err?.message || 'Failed to send reset link'
+      toast.error(msg)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleResend = () => {
-    setError('')
+  const handleResend = async () => {
     setIsLoading(true)
-
-    setTimeout(() => {
+    try {
+      await api.forgotPassword(email)
+      toast.success('Reset link sent again')
+    } catch (err: any) {
+      const msg = err?.body?.detail || err?.message || 'Failed to resend'
+      toast.error(msg)
+    } finally {
       setIsLoading(false)
-      setSuccess(true)
-    }, 1000)
+    }
   }
 
   return (
@@ -73,7 +75,6 @@ export default function ForgotPasswordPage() {
           </div>
 
           {success ? (
-            // Success State
             <div className="space-y-6">
               <div className="flex flex-col items-center justify-center py-4 space-y-4">
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
@@ -85,7 +86,7 @@ export default function ForgotPasswordPage() {
                     We've sent a password reset link to
                   </p>
                   <p className="text-sm font-medium text-indigo-600 mt-1">
-                    {submittedEmail}
+                    {email}
                   </p>
                 </div>
               </div>
@@ -124,7 +125,6 @@ export default function ForgotPasswordPage() {
               </Link>
             </div>
           ) : (
-            // Form State
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700 font-medium">
@@ -138,19 +138,12 @@ export default function ForgotPasswordPage() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all ${
-                      error ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''
-                    }`}
+                    className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all"
                     disabled={isLoading}
                     autoFocus
+                    required
                   />
                 </div>
-                {error && (
-                  <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{error}</span>
-                  </div>
-                )}
               </div>
 
               <Button

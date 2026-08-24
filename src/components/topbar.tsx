@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Search, Wifi, WifiOff } from 'lucide-react'
+import { Bell, Search, Wifi, WifiOff, LogOut } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { CHURCH, notifications } from '@/lib/data'
+import { api } from '@/lib/api'
 
 export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const navigate = useNavigate()
@@ -35,8 +37,19 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     }
   }, [])
 
-  const handleSignOut = () => {
-    navigate('/app/logout')
+  const handleSignOut = async () => {
+    try {
+      const refresh = localStorage.getItem('refresh_token')
+      if (refresh) {
+        await api.logout(refresh)
+      }
+    } catch {
+      // ignore logout API errors, still clear local state
+    } finally {
+      api.clearTokens()
+      toast.success('Signed out successfully')
+      navigate('/login', { replace: true })
+    }
   }
 
   return (
@@ -115,6 +128,7 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
               <DropdownMenuItem>Preferences</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 w-4 h-4" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuGroup>
