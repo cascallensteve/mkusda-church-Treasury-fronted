@@ -24,6 +24,7 @@ import AuditsPage from '@/pages/app/audits'
 import DocumentsPage from '@/pages/app/documents'
 import UsersPage from '@/pages/app/users'
 import SettingsPage from '@/pages/app/settings'
+import ProfilePage from '@/pages/app/profile'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -118,6 +119,7 @@ export default function App() {
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

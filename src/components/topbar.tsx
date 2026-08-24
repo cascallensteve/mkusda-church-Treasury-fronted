@@ -24,6 +24,38 @@ import { api, clearTokens } from '@/lib/api'
 export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const navigate = useNavigate()
   const [isOnline, setIsOnline] = useState(true)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const cached = localStorage.getItem('user')
+    if (cached) {
+      try {
+        setUser(JSON.parse(cached))
+      } catch {
+        /* ignore malformed cache */
+      }
+    }
+
+    let cancelled = false
+    api.getProfile()
+      .then((profile) => {
+        if (cancelled) return
+        const merged = {
+          ...profile,
+          name: profile.full_name || profile.username || profile.email,
+          role: profile.role || 'User',
+        }
+        setUser(merged)
+        localStorage.setItem('user', JSON.stringify(merged))
+      })
+      .catch(() => {
+        /* keep cached user if fetch fails */
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     setIsOnline(navigator.onLine)
@@ -113,18 +145,26 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-full pl-1 outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <Avatar className="size-9">
-              <AvatarFallback className="bg-primary text-primary-foreground">AM</AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {user?.name
+                  ? user.name.split(/\s+/).filter(Boolean).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+                  : '?'}
+              </AvatarFallback>
             </Avatar>
             <div className="hidden text-left leading-tight md:block">
-              <p className="text-sm font-medium">Anna Mushi</p>
-              <p className="text-xs text-muted-foreground">Treasurer</p>
+              <p className="text-sm font-medium">{user?.name || 'User'}</p>
+              <p className="text-xs text-muted-foreground">{user?.role || 'User'}</p>
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuGroup>
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+              <div className="flex flex-col">
+                <span>{user?.name || 'My Account'}</span>
+              </div>
+            </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/app/profile')}>Profile</DropdownMenuItem>
               <DropdownMenuItem>Preferences</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>

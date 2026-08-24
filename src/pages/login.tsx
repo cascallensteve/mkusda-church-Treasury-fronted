@@ -17,12 +17,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from '@/components/ui/tabs'
 
 import { CHURCH } from '@/lib/data'
 import { api, setTokens } from '@/lib/api'
@@ -38,7 +32,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loginSuccess, setLoginSuccess] = useState(false)
-  const [, setLoginMethod] = useState('email')
   const [error, setError] = useState('')
   const [lockoutSeconds, setLockoutSeconds] = useState(0)
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null)
@@ -232,184 +225,98 @@ export default function LoginPage() {
               </div>
             ) : step === 'credentials' ? (
               <>
-                <Tabs 
-                  defaultValue="email" 
-                  className="w-full"
-                  onValueChange={(value) => setLoginMethod(value)}
-                >
-                  <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100 p-1 rounded-xl">
-                    <TabsTrigger 
-                      value="email" 
-                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-600 transition-all"
-                    >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Email
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="pin" 
-                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-600 transition-all"
-                    >
-                      <KeyRound className="w-4 h-4 mr-2" />
-                      PIN
-                    </TabsTrigger>
-                  </TabsList>
+                <form onSubmit={handleEmailSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-gray-700 font-medium">
+                      Email Address
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all"
+                        disabled={isLoading || isLocked}
+                        required
+                      />
+                    </div>
+                  </div>
 
-                  <TabsContent value="email">
-                    <form onSubmit={handleEmailSubmit} className="space-y-5">
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-gray-700 font-medium">
-                          Email Address
-                        </Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all"
-                            disabled={isLoading || isLocked}
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <Label htmlFor="password" className="text-gray-700 font-medium">
-                            Password
-                          </Label>
-                          <Link 
-                            to="/forgot-password" 
-                            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                          >
-                            Forgot password?
-                          </Link>
-                        </div>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <Input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="pl-10 pr-12 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all"
-                            disabled={isLoading || isLocked}
-                            required
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            disabled={isLoading || isLocked}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="w-5 h-5" />
-                            ) : (
-                              <Eye className="w-5 h-5" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      {error && (
-                        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-200">
-                          {error}
-                        </div>
-                      )}
-
-                      {attemptsRemaining !== null && attemptsRemaining > 0 && !isLocked && (
-                        <p className="text-xs text-amber-600 text-center">
-                          {attemptsRemaining} attempt{attemptsRemaining !== 1 ? 's' : ''} remaining before temporary lockout
-                        </p>
-                      )}
-
-                      <Button 
-                        type="submit" 
-                        className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="password" className="text-gray-700 font-medium">
+                        Password
+                      </Label>
+                      <Link 
+                        to="/forgot-password" 
+                        className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 pr-12 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all"
+                        disabled={isLoading || isLocked}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         disabled={isLoading || isLocked}
                       >
-                        {isLoading ? (
-                          <span className="flex items-center gap-2">
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Verifying...
-                          </span>
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
                         ) : (
-                          <span className="flex items-center gap-2">
-                            Continue
-                            <ArrowRight className="w-5 h-5" />
-                          </span>
+                          <Eye className="w-5 h-5" />
                         )}
-                      </Button>
-                    </form>
-                  </TabsContent>
+                      </button>
+                    </div>
+                  </div>
 
-                  <TabsContent value="pin">
-                    <form onSubmit={handlePinSubmit} className="space-y-5">
-                      <div className="space-y-2">
-                        <Label htmlFor="pin-direct" className="text-gray-700 font-medium">
-                          Enter 4-Digit PIN
-                        </Label>
-                        <div className="relative">
-                          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <Input
-                            id="pin-direct"
-                            type="password"
-                            placeholder="••••"
-                            maxLength={4}
-                            value={pin}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '')
-                              setPin(value.slice(0, 4))
-                            }}
-                            className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl transition-all text-center text-2xl tracking-widest"
-                            disabled={isLoading || isLocked}
-                            required
-                          />
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1">Enter your 4-digit security PIN</p>
-                      </div>
+                  {error && (
+                    <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-200">
+                      {error}
+                    </div>
+                  )}
 
-                      {error && (
-                        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-200">
-                          {error}
-                        </div>
-                      )}
+                  {attemptsRemaining !== null && attemptsRemaining > 0 && !isLocked && (
+                    <p className="text-xs text-amber-600 text-center">
+                      {attemptsRemaining} attempt{attemptsRemaining !== 1 ? 's' : ''} remaining before temporary lockout
+                    </p>
+                  )}
 
-                      {attemptsRemaining !== null && attemptsRemaining > 0 && !isLocked && (
-                        <p className="text-xs text-amber-600 text-center">
-                          {attemptsRemaining} attempt{attemptsRemaining !== 1 ? 's' : ''} remaining before temporary lockout
-                        </p>
-                      )}
-
-                      <Button 
-                        type="submit" 
-                        className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
-                        disabled={isLoading || isLocked}
-                      >
-                        {isLoading ? (
-                          <span className="flex items-center gap-2">
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Verifying...
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            Verify PIN
-                            <ArrowRight className="w-5 h-5" />
-                          </span>
-                        )}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                    disabled={isLoading || isLocked}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Verifying...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        Continue
+                        <ArrowRight className="w-5 h-5" />
+                      </span>
+                    )}
+                  </Button>
+                </form>
 
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-500">
