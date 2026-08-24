@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles, Heart } from 'lucide-react'
 import { motion, type Variants } from 'framer-motion'
 
 import { Button } from '@/components/ui/button'
@@ -107,6 +107,12 @@ export default function LandingPage() {
               <Link to="/login">
                 <Button size="lg" className="w-full sm:w-auto gap-2 text-base px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
                   Access Treasury System <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+              <Link to="/donate">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2 text-base px-8 border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50">
+                  <Heart className="w-4 h-4" />
+                  Make a Donation
                 </Button>
               </Link>
             </motion.div>

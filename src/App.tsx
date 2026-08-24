@@ -99,6 +99,8 @@ export default function App() {
         </PublicRoute>
       } />
       <Route path="/donate" element={<PublicDonationPage />} />
+      <Route path="/donation" element={<Navigate to="/donate" replace />} />
+      <Route path="/donations" element={<Navigate to="/donate" replace />} />
       <Route path="/app" element={
         <ProtectedRoute>
           <AppLayout />

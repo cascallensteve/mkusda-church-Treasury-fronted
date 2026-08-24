@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   FileBarChart,
   Download,
@@ -15,7 +14,8 @@ import {
   ArrowLeft,
   Loader2,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Plus
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -31,15 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import {
   LineChart as RechartsLineChart,
@@ -57,9 +48,10 @@ import {
   ResponsiveContainer
 } from 'recharts'
 
+import { PageHeader } from '@/components/page-header'
+import { StatCard } from '@/components/stat-card'
 import { CHURCH, formatKES } from '@/lib/data'
 
-// Sample data for charts
 const monthlyData = [
   { month: 'Jan', income: 45000, expenses: 32000, tithes: 28000, offerings: 17000 },
   { month: 'Feb', income: 52000, expenses: 28000, tithes: 32000, offerings: 20000 },
@@ -102,13 +94,12 @@ const reportTypes = [
 ]
 
 export default function ReportsPage() {
-  const navigate = useNavigate()
   const [selectedReport, setSelectedReport] = useState('financial')
   const [dateRange, setDateRange] = useState('this-month')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [generatedReport, setGeneratedReport] = useState<any>(null)
 
   const totalIncome = monthlyData.reduce((sum, d) => sum + d.income, 0)
@@ -117,81 +108,62 @@ export default function ReportsPage() {
   const totalTithes = monthlyData.reduce((sum, d) => sum + d.tithes, 0)
   const totalOfferings = monthlyData.reduce((sum, d) => sum + d.offerings, 0)
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = (e: React.FormEvent) => {
+    e.preventDefault()
     setIsLoading(true)
     setTimeout(() => {
       setGeneratedReport({
-        title: `${reportTypes.find(r => r.value === selectedReport)?.label}`,
+        title: reportTypes.find(r => r.value === selectedReport)?.label,
         date: new Date().toISOString().split('T')[0],
-        summary: {
-          totalIncome,
-          totalExpenses,
-          netPosition,
-          totalTithes,
-          totalOfferings,
-          totalMembers: 150
-        }
+        summary: { totalIncome, totalExpenses, netPosition, totalTithes, totalOfferings, totalMembers: 150 }
       })
+      setIsFormOpen(false)
       setIsLoading(false)
-      setIsGenerateDialogOpen(false)
-    }, 1500)
+    }, 1200)
   }
 
-  const handleExport = () => {
-    // Simulate export
-    alert('Report exported successfully!')
-  }
-
-  const handlePrint = () => {
-    window.print()
-  }
+  const handleExport = () => alert('Report exported successfully!')
+  const handlePrint = () => window.print()
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Navigation */}
-      <nav className="bg-white border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/app/dashboard')} className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back
+      <main className="container mx-auto px-4 py-6">
+        <PageHeader
+          title="Reports"
+          description={`Generate and view financial reports for ${CHURCH.name}`}
+          actions={
+            <Button onClick={() => setIsFormOpen(true)} className="gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+              <Plus className="w-4 h-4" />
+              Generate Report
             </Button>
-            <img
-              src="https://res.cloudinary.com/dqvsjtkqw/image/upload/v1751876492/image-removebg-preview_hss6vx.png"
-              alt="Logo"
-              className="h-10 w-10 object-contain"
-            />
-            <div>
-              <h1 className="text-lg font-bold text-gray-800">Reports</h1>
-              <p className="text-xs text-gray-500">Generate and view financial reports</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Print</span>
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
-            <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
-                  <FileBarChart className="w-4 h-4" />
-                  Generate Report
+          }
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard label="Total Income" value={formatKES(totalIncome, { compact: true })} icon={TrendingUp} accent="primary" />
+          <StatCard label="Total Expenses" value={formatKES(totalExpenses, { compact: true })} icon={TrendingDown} accent="emerald" />
+          <StatCard label="Net Position" value={formatKES(netPosition, { compact: true })} icon={Wallet} accent="teal" />
+          <StatCard label="Tithes & Offerings" value={formatKES(totalTithes + totalOfferings, { compact: true })} icon={HandCoins} accent="amber" />
+        </div>
+
+        {isFormOpen ? (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Button variant="outline" onClick={() => setIsFormOpen(false)} className="gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Generate Report</DialogTitle>
-                  <DialogDescription>
-                    Select the report type and date range.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Report Type</Label>
+                <div>
+                  <h2 className="text-lg font-semibold">Generate Report</h2>
+                  <p className="text-sm text-muted-foreground">Select the report type and date range.</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleGenerateReport} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="reportType">Report Type *</Label>
                     <Select value={selectedReport} onValueChange={setSelectedReport}>
                       <SelectTrigger>
                         <SelectValue />
@@ -209,8 +181,8 @@ export default function ReportsPage() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Date Range</Label>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="dateRange">Date Range *</Label>
                     <Select value={dateRange} onValueChange={setDateRange}>
                       <SelectTrigger>
                         <SelectValue />
@@ -228,300 +200,176 @@ export default function ReportsPage() {
                   </div>
 
                   {dateRange === 'custom' && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 md:col-span-2">
                       <div className="space-y-2">
-                        <Label>Start Date</Label>
-                        <Input
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                        />
+                        <Label htmlFor="startDate">Start Date</Label>
+                        <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                        <Label>End Date</Label>
-                        <Input
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                        />
+                        <Label htmlFor="endDate">End Date</Label>
+                        <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                       </div>
                     </div>
                   )}
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsGenerateDialogOpen(false)}>
-                    Cancel
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+                  <Button type="submit" disabled={isLoading} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+                    {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</> : <><FileBarChart className="w-4 h-4 mr-2" />Generate Report</>}
                   </Button>
-                  <Button onClick={handleGenerateReport} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <FileBarChart className="w-4 h-4 mr-2" />
-                        Generate
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
-        {/* Report Type Tabs */}
-        <Tabs value={selectedReport} onValueChange={setSelectedReport} className="mb-6">
-          <TabsList className="bg-white border shadow-sm">
-            {reportTypes.map((type) => (
-              <TabsTrigger key={type.value} value={type.value} className="gap-2">
-                <type.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{type.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Income</p>
-                  <p className="text-2xl font-bold text-emerald-600">{formatKES(totalIncome)}</p>
                 </div>
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-emerald-600" />
-                </div>
-              </div>
+              </form>
             </CardContent>
           </Card>
+        ) : (
+          <>
+            <Tabs value={selectedReport} onValueChange={setSelectedReport} className="mb-6">
+              <TabsList className="bg-white border shadow-sm">
+                {reportTypes.map((type) => (
+                  <TabsTrigger key={type.value} value={type.value} className="gap-2">
+                    <type.icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{type.label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
 
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Expenses</p>
-                  <p className="text-2xl font-bold text-rose-600">{formatKES(totalExpenses)}</p>
-                </div>
-                <div className="p-2 bg-rose-100 rounded-lg">
-                  <TrendingDown className="w-5 h-5 text-rose-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Net Position</p>
-                  <p className={`text-2xl font-bold ${netPosition >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
-                    {formatKES(netPosition)}
-                  </p>
-                </div>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Wallet className="w-5 h-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Tithe & Offerings</p>
-                  <p className="text-2xl font-bold text-purple-600">{formatKES(totalTithes + totalOfferings)}</p>
-                </div>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <HandCoins className="w-5 h-5 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Income vs Expenses Chart */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Income vs Expenses</CardTitle>
-              <CardDescription>Monthly comparison</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="month" stroke="#888" fontSize={12} />
-                    <YAxis stroke="#888" fontSize={12} />
-                    <Tooltip
-                      formatter={(value) => formatKES(value as number)}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    />
-                    <Legend />
-                    <Bar dataKey="income" fill="#4F46E5" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Fund Distribution */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Fund Distribution</CardTitle>
-              <CardDescription>Breakdown by category</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie
-                      data={fundDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={4}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
-                    >
-                      {fundDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `${value}%`} />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tithes & Offerings Chart */}
-        <Card className="border-0 shadow-sm mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Tithes & Offerings Trend</CardTitle>
-            <CardDescription>Monthly collection trend</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsLineChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="month" stroke="#888" fontSize={12} />
-                  <YAxis stroke="#888" fontSize={12} />
-                  <Tooltip
-                    formatter={(value) => formatKES(value as number)}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="tithes" stroke="#4F46E5" strokeWidth={2} />
-                  <Line type="monotone" dataKey="offerings" stroke="#8B5CF6" strokeWidth={2} />
-                </RechartsLineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Department Budget vs Actual */}
-        <Card className="border-0 shadow-sm mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Department Budget vs Actual</CardTitle>
-            <CardDescription>Budget utilization by department</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {departmentData.map((dept) => {
-                const percentage = (dept.amount / dept.budget) * 100
-                const isOverBudget = percentage > 100
-                return (
-                  <div key={dept.name} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">{dept.name}</span>
-                      <span>
-                        <span className="font-medium">{formatKES(dept.amount)}</span>
-                        <span className="text-gray-400"> / {formatKES(dept.budget)}</span>
-                      </span>
-                    </div>
-                    <Progress 
-                      value={Math.min(percentage, 100)} 
-                      className={`h-2 ${isOverBudget ? 'bg-rose-100' : 'bg-gray-100'}`}
-                    />
-                    <div className="flex justify-between text-xs">
-                      <span className={isOverBudget ? 'text-rose-600' : 'text-emerald-600'}>
-                        {percentage.toFixed(0)}% utilized
-                      </span>
-                      {isOverBudget && (
-                        <span className="text-rose-600 font-medium">Over budget!</span>
-                      )}
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">Income vs Expenses</CardTitle>
+                  <CardDescription>Monthly comparison</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsBarChart data={monthlyData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="month" stroke="#888" fontSize={12} />
+                        <YAxis stroke="#888" fontSize={12} />
+                        <Tooltip formatter={(value) => formatKES(value as number)} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                        <Legend />
+                        <Bar dataKey="income" fill="#4F46E5" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                      </RechartsBarChart>
+                    </ResponsiveContainer>
                   </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
 
-        {/* Recent Transactions */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-semibold">Recent Transactions</CardTitle>
-                <CardDescription>Latest financial activity</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" className="text-blue-600">
-                View All
-              </Button>
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">Fund Distribution</CardTitle>
+                  <CardDescription>Breakdown by category</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie data={fundDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                          {fundDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                        </Pie>
+                        <Tooltip formatter={(value) => `${value}%`} />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentTransactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      transaction.type === 'income' ? 'bg-emerald-50' : 'bg-rose-50'
-                    }`}>
-                      {transaction.type === 'income' ? (
-                        <ArrowUpRight className="w-4 h-4 text-emerald-600" />
-                      ) : (
-                        <ArrowDownRight className="w-4 h-4 text-rose-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm text-gray-800">{transaction.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span>{transaction.date}</span>
-                        <span>•</span>
-                        <Badge variant="outline" className="text-xs">{transaction.category}</Badge>
+
+            <Card className="border-0 shadow-sm mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Tithes & Offerings Trend</CardTitle>
+                <CardDescription>Monthly collection trend</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[250px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="month" stroke="#888" fontSize={12} />
+                      <YAxis stroke="#888" fontSize={12} />
+                      <Tooltip formatter={(value) => formatKES(value as number)} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="tithes" stroke="#4F46E5" strokeWidth={2} />
+                      <Line type="monotone" dataKey="offerings" stroke="#8B5CF6" strokeWidth={2} />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Department Budget vs Actual</CardTitle>
+                <CardDescription>Budget utilization by department</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {departmentData.map((dept) => {
+                    const percentage = (dept.amount / dept.budget) * 100
+                    const isOverBudget = percentage > 100
+                    return (
+                      <div key={dept.name} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">{dept.name}</span>
+                          <span>
+                            <span className="font-medium">{formatKES(dept.amount)}</span>
+                            <span className="text-gray-400"> / {formatKES(dept.budget)}</span>
+                          </span>
+                        </div>
+                        <Progress value={Math.min(percentage, 100)} className={`h-2 ${isOverBudget ? 'bg-rose-100' : 'bg-gray-100'}`} />
+                        <div className="flex justify-between text-xs">
+                          <span className={isOverBudget ? 'text-rose-600' : 'text-emerald-600'}>{percentage.toFixed(0)}% utilized</span>
+                          {isOverBudget && <span className="text-rose-600 font-medium">Over budget!</span>}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <p className={`font-semibold text-sm ${
-                    transaction.type === 'income' ? 'text-emerald-600' : 'text-rose-600'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatKES(transaction.amount)}
-                  </p>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Generated Report Preview */}
-        {generatedReport && (
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-semibold">Recent Transactions</CardTitle>
+                    <CardDescription>Latest financial activity</CardDescription>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-blue-600">View All</Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {recentTransactions.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${transaction.type === 'income' ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                          {transaction.type === 'income' ? <ArrowUpRight className="w-4 h-4 text-emerald-600" /> : <ArrowDownRight className="w-4 h-4 text-rose-600" />}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-gray-800">{transaction.description}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <span>{transaction.date}</span>
+                            <span>•</span>
+                            <Badge variant="outline" className="text-xs">{transaction.category}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <p className={`font-semibold text-sm ${transaction.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {transaction.type === 'income' ? '+' : '-'}{formatKES(transaction.amount)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {generatedReport && !isFormOpen && (
           <Card className="border-2 border-blue-100 shadow-sm mt-6">
             <CardHeader className="bg-blue-50">
               <div className="flex items-center justify-between">
@@ -533,54 +381,30 @@ export default function ReportsPage() {
                   <CardDescription>Generated on {generatedReport.date}</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
-                    <Printer className="w-4 h-4" />
-                    Print
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
-                    <Download className="w-4 h-4" />
-                    Export
-                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}><Printer className="w-4 h-4" />Print</Button>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}><Download className="w-4 h-4" />Export</Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500">Total Income</p>
-                  <p className="text-lg font-bold text-emerald-600">{formatKES(generatedReport.summary.totalIncome)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Total Expenses</p>
-                  <p className="text-lg font-bold text-rose-600">{formatKES(generatedReport.summary.totalExpenses)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Net Position</p>
-                  <p className={`text-lg font-bold ${generatedReport.summary.netPosition >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
-                    {formatKES(generatedReport.summary.netPosition)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Tithes</p>
-                  <p className="text-lg font-bold text-purple-600">{formatKES(generatedReport.summary.totalTithes)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Offerings</p>
-                  <p className="text-lg font-bold text-indigo-600">{formatKES(generatedReport.summary.totalOfferings)}</p>
-                </div>
+                <div><p className="text-xs text-gray-500">Total Income</p><p className="text-lg font-bold text-emerald-600">{formatKES(generatedReport.summary.totalIncome)}</p></div>
+                <div><p className="text-xs text-gray-500">Total Expenses</p><p className="text-lg font-bold text-rose-600">{formatKES(generatedReport.summary.totalExpenses)}</p></div>
+                <div><p className="text-xs text-gray-500">Net Position</p><p className={`text-lg font-bold ${generatedReport.summary.netPosition >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>{formatKES(generatedReport.summary.netPosition)}</p></div>
+                <div><p className="text-xs text-gray-500">Tithes</p><p className="text-lg font-bold text-purple-600">{formatKES(generatedReport.summary.totalTithes)}</p></div>
+                <div><p className="text-xs text-gray-500">Offerings</p><p className="text-lg font-bold text-indigo-600">{formatKES(generatedReport.summary.totalOfferings)}</p></div>
               </div>
             </CardContent>
           </Card>
         )}
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t bg-white mt-12">
-        <div className="container mx-auto px-4 py-6 text-center">
-          <p className="text-sm text-gray-500">{CHURCH.system} • {CHURCH.location}</p>
-          <p className="text-xs text-gray-400 mt-1">© 2026 {CHURCH.name}. All rights reserved.</p>
-        </div>
-      </footer>
+        <footer className="border-t bg-white mt-8">
+          <div className="container mx-auto px-4 py-6 text-center">
+            <p className="text-sm text-gray-500">{CHURCH.system} • {CHURCH.location}</p>
+            <p className="text-xs text-gray-400 mt-1">© {new Date().getFullYear()} {CHURCH.name}. All rights reserved.</p>
+          </div>
+        </footer>
+      </main>
     </div>
   )
 }
