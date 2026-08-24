@@ -13,6 +13,9 @@ import {
   AlertCircle,
   Pencil,
   ArrowLeft,
+  Save,
+  X,
+  Upload,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -26,9 +29,12 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/page-header'
 
 import { api } from '@/lib/api'
+import { uploadImageToCloudinary } from '@/lib/cloudinary'
 
 function getInitials(name?: string) {
   if (!name) return '?'
@@ -57,6 +63,17 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [form, setForm] = useState({
+    first_name: '',
+    last_name: '',
+    username: '',
+    profile_picture: '',
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -87,6 +104,64 @@ export default function ProfilePage() {
   }, [])
 
   const pinComplete = !!profile?.pin_setup_complete
+
+  const startEdit = () => {
+    setForm({
+      first_name: profile?.first_name || '',
+      last_name: profile?.last_name || '',
+      username: profile?.username || '',
+      profile_picture: profile?.profile_picture || '',
+    })
+    setFormError('')
+    setEditing(true)
+  }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingImage(true)
+    try {
+      const url = await uploadImageToCloudinary(file)
+      setForm((prev) => ({ ...prev, profile_picture: url }))
+      toast.success('Image uploaded')
+    } catch (err: any) {
+      toast.error(err?.message || 'Image upload failed')
+    } finally {
+      setUploadingImage(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setSaving(true)
+    setFormError('')
+    try {
+      const payload: Record<string, string> = {}
+      if (form.first_name.trim()) payload.first_name = form.first_name.trim()
+      if (form.last_name.trim()) payload.last_name = form.last_name.trim()
+      if (form.username.trim()) payload.username = form.username.trim()
+      if (form.profile_picture.trim()) payload.profile_picture = form.profile_picture.trim()
+
+      const updated = await api.updateProfile(payload)
+      const merged = {
+        ...profile,
+        ...updated,
+        name: updated.full_name || updated.username || updated.email,
+        role: updated.role || profile?.role || 'User',
+      }
+      setProfile(merged)
+      localStorage.setItem('user', JSON.stringify(merged))
+      setEditing(false)
+      toast.success('Profile updated successfully')
+    } catch (err: any) {
+      const msg = err?.body?.detail || err?.message || 'Failed to update profile'
+      setFormError(typeof msg === 'string' ? msg : 'Failed to update profile')
+      toast.error(typeof msg === 'string' ? msg : 'Failed to update profile')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -128,6 +203,13 @@ export default function ProfilePage() {
           <Card className="lg:col-span-1">
             <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
               <Avatar className="size-24 text-2xl">
+                {profile?.profile_picture ? (
+                  <img
+                    src={profile.profile_picture}
+                    alt={profile?.name}
+                    className="size-full object-cover"
+                  />
+                ) : null}
                 <AvatarFallback className="bg-primary text-primary-foreground">
                   {getInitials(profile?.name)}
                 </AvatarFallback>
@@ -150,53 +232,172 @@ export default function ProfilePage() {
                   </Badge>
                 )}
               </div>
-              <Button variant="outline" size="sm" className="mt-2 gap-2" disabled>
-                <Pencil className="size-4" />
-                Edit profile
-              </Button>
+              {!editing && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 gap-2"
+                  onClick={startEdit}
+                >
+                  <Pencil className="size-4" />
+                  Edit profile
+                </Button>
+              )}
             </CardContent>
           </Card>
 
-          {/* Details */}
+          {/* Details / Edit */}
           <div className="flex flex-col gap-6 lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Details</CardTitle>
-                <CardDescription>Your registered information.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <DetailRow
-                  icon={AtSign}
-                  label="Username"
-                  value={profile?.username || '—'}
-                />
-                <DetailRow
-                  icon={Mail}
-                  label="Email"
-                  value={profile?.email || '—'}
-                />
-                <DetailRow
-                  icon={User}
-                  label="Full Name"
-                  value={profile?.full_name || '—'}
-                />
-                <DetailRow
-                  icon={ShieldCheck}
-                  label="Role"
-                  value={profile?.role || 'User'}
-                />
-                <DetailRow
-                  icon={CalendarDays}
-                  label="Member since"
-                  value={formatDate(profile?.created_at)}
-                />
-                <DetailRow
-                  icon={KeyRound}
-                  label="PIN Setup"
-                  value={pinComplete ? 'Completed' : 'Not completed'}
-                />
-              </CardContent>
-            </Card>
+            {editing ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Edit Profile</CardTitle>
+                  <CardDescription>Update your personal information.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSave} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field label="First Name">
+                      <Input
+                        value={form.first_name}
+                        onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                        placeholder="First name"
+                        disabled={saving}
+                      />
+                    </Field>
+                    <Field label="Last Name">
+                      <Input
+                        value={form.last_name}
+                        onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                        placeholder="Last name"
+                        disabled={saving}
+                      />
+                    </Field>
+                    <Field label="Username" className="sm:col-span-2">
+                      <Input
+                        value={form.username}
+                        onChange={(e) => setForm({ ...form, username: e.target.value })}
+                        placeholder="Username"
+                        disabled={saving}
+                      />
+                    </Field>
+                    <Field label="Profile Picture" className="sm:col-span-2">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div className="size-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+                          {form.profile_picture ? (
+                            <img
+                              src={form.profile_picture}
+                              alt="Preview"
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex size-full items-center justify-center text-muted-foreground">
+                              <User className="size-6" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="profile-picture"
+                            className="hidden"
+                            onChange={handleImageChange}
+                            disabled={saving || uploadingImage}
+                          />
+                          <label
+                            htmlFor="profile-picture"
+                            className="inline-flex h-9 w-fit cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                          >
+                            <Upload className="size-4" />
+                            {uploadingImage ? 'Uploading…' : 'Choose image'}
+                          </label>
+                          <Input
+                            value={form.profile_picture}
+                            onChange={(e) => setForm({ ...form, profile_picture: e.target.value })}
+                            placeholder="https://res.cloudinary.com/.../avatar.jpg"
+                            disabled={saving}
+                          />
+                        </div>
+                      </div>
+                    </Field>
+                    <Field label="Email" className="sm:col-span-2">
+                      <Input value={profile?.email || ''} disabled />
+                    </Field>
+
+                    {formError && (
+                      <div className="sm:col-span-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                        {formError}
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 sm:col-span-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="gap-2"
+                        onClick={() => setEditing(false)}
+                        disabled={saving}
+                      >
+                        <X className="size-4" />
+                        Cancel
+                      </Button>
+                      <Button type="submit" className="gap-2" disabled={saving}>
+                        {saving ? (
+                          <span className="flex items-center gap-2">
+                            <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Saving…
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            <Save className="size-4" />
+                            Save changes
+                          </span>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Details</CardTitle>
+                  <CardDescription>Your registered information.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <DetailRow
+                    icon={AtSign}
+                    label="Username"
+                    value={profile?.username || '—'}
+                  />
+                  <DetailRow
+                    icon={Mail}
+                    label="Email"
+                    value={profile?.email || '—'}
+                  />
+                  <DetailRow
+                    icon={User}
+                    label="Full Name"
+                    value={profile?.full_name || '—'}
+                  />
+                  <DetailRow
+                    icon={ShieldCheck}
+                    label="Role"
+                    value={profile?.role || 'User'}
+                  />
+                  <DetailRow
+                    icon={CalendarDays}
+                    label="Member since"
+                    value={formatDate(profile?.created_at)}
+                  />
+                  <DetailRow
+                    icon={KeyRound}
+                    label="PIN Setup"
+                    value={pinComplete ? 'Completed' : 'Not completed'}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>
@@ -251,6 +452,23 @@ function DetailRow({
         <p className="text-xs text-muted-foreground">{label}</p>
         <p className="truncate text-sm font-medium">{value}</p>
       </div>
+    </div>
+  )
+}
+
+function Field({
+  label,
+  children,
+  className,
+}: {
+  label: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div className={`space-y-2 ${className || ''}`}>
+      <Label className="text-gray-700 font-medium">{label}</Label>
+      {children}
     </div>
   )
 }

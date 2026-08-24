@@ -6,6 +6,7 @@ import LoginPage from '@/pages/login'
 import ForgotPasswordPage from '@/pages/forgot-password'
 import ResetPasswordPage from '@/pages/reset-password'
 import NotFoundPage from '@/pages/app/NotFound'
+import PublicDonationPage from '@/pages/users/public'
 import LogoutPage from '@/pages/app/logout'
 import AppLayout from '@/pages/app/layout'
 import DashboardPage from '@/pages/app/dashboard'
@@ -97,6 +98,7 @@ export default function App() {
           <ResetPasswordPage />
         </PublicRoute>
       } />
+      <Route path="/donate" element={<PublicDonationPage />} />
       <Route path="/app" element={
         <ProtectedRoute>
           <AppLayout />

@@ -145,6 +145,13 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-full pl-1 outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <Avatar className="size-9">
+              {user?.profile_picture ? (
+                <img
+                  src={user.profile_picture}
+                  alt={user?.name || 'User'}
+                  className="size-full object-cover"
+                />
+              ) : null}
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {user?.name
                   ? user.name.split(/\s+/).filter(Boolean).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()

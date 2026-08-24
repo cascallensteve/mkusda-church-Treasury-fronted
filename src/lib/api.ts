@@ -89,6 +89,29 @@ async function parseResponse(res: Response): Promise<any> {
   return body
 }
 
+// Public donation endpoint (no auth). Update this once the user provides the real API URL.
+const DONATION_API = import.meta.env.VITE_DONATION_API || 'https://churchppmkusdabackend.vercel.app/api/donations/'
+
+export async function submitDonation(payload: Record<string, any>): Promise<any> {
+  const res = await fetch(DONATION_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  const contentType = res.headers.get('content-type')
+  const body = contentType && contentType.includes('application/json') ? await res.json() : {}
+
+  if (!res.ok) {
+    const error = new Error(body.detail || body.message || 'Donation failed')
+    ;(error as any).body = body
+    ;(error as any).status = res.status
+    throw error
+  }
+
+  return body
+}
+
 export const api = {
   login: (payload: { email: string; password?: string; pin?: string }) =>
     request('/login/', { method: 'POST', body: JSON.stringify(payload) }),
