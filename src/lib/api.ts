@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE || '/api/auth'
+const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+const DONATION_API = import.meta.env.VITE_DONATION_API_BASE || '/api'
 
 function getToken() {
   return localStorage.getItem('access_token')
@@ -89,6 +90,24 @@ async function parseResponse(res: Response): Promise<any> {
   return body
 }
 
+async function donationRequest(url: string, options: RequestInit = {}): Promise<any> {
+  const token = getToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const res = await fetch(`${DONATION_API}${url}`, {
+    ...options,
+    headers,
+  })
+
+  return parseResponse(res)
+}
+
 export const api = {
   login: (payload: { email: string; password?: string; pin?: string }) =>
     request('/login/', { method: 'POST', body: JSON.stringify(payload) }),
@@ -124,24 +143,24 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  getDonationTypes: () => request('/donation/donation-types/'),
+  getDonationTypes: () => donationRequest('/donation/donation-types/'),
 
   createDonationType: (data: { name: string; description?: string }) =>
-    request('/donation/donation-types/', {
+    donationRequest('/donation/donation-types/', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  getDonationType: (id: number) => request(`/donation/donation-types/${id}/`),
+  getDonationType: (id: number) => donationRequest(`/donation/donation-types/${id}/`),
 
   updateDonationType: (id: number, data: { name?: string; description?: string }) =>
-    request(`/donation/donation-types/${id}/`, {
+    donationRequest(`/donation/donation-types/${id}/`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
 
   deleteDonationType: (id: number) =>
-    request(`/donation/donation-types/${id}/`, { method: 'DELETE' }),
+    donationRequest(`/donation/donation-types/${id}/`, { method: 'DELETE' }),
 }
 
 export { clearTokens, getToken, setTokens }
