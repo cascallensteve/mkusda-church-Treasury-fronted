@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   Lock,
@@ -21,7 +21,6 @@ import { CHURCH } from '@/lib/data'
 import { api } from '@/lib/api'
 
 export default function ResetPasswordPage() {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
 

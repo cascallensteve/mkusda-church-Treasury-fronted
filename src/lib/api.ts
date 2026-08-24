@@ -93,6 +93,9 @@ export const api = {
   login: (payload: { email: string; password?: string; pin?: string }) =>
     request('/login/', { method: 'POST', body: JSON.stringify(payload) }),
 
+  verifyPin: (email: string, pin: string) =>
+    request('/verify-pin/', { method: 'POST', body: JSON.stringify({ email, pin }) }),
+
   logout: (refresh: string) =>
     request('/logout/', { method: 'POST', body: JSON.stringify({ refresh }) }),
 

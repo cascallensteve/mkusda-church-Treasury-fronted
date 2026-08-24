@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { CHURCH, formatKES } from '@/lib/data'
+import { api } from '@/lib/api'
 
 // Sample data - replace with your actual data
 const monthlyData = [
@@ -66,9 +67,33 @@ export default function DashboardPage() {
       return
     }
 
-    const userData = localStorage.getItem('user')
-    if (userData) {
-      setUser(JSON.parse(userData))
+    const cached = localStorage.getItem('user')
+    if (cached) {
+      try {
+        setUser(JSON.parse(cached))
+      } catch {
+        /* ignore malformed cache */
+      }
+    }
+
+    let cancelled = false
+    api.getProfile()
+      .then((profile) => {
+        if (cancelled) return
+        const merged = {
+          ...profile,
+          name: profile.full_name || profile.username || profile.email,
+          role: 'User',
+        }
+        setUser(merged)
+        localStorage.setItem('user', JSON.stringify(merged))
+      })
+      .catch(() => {
+        /* keep cached user if fetch fails */
+      })
+
+    return () => {
+      cancelled = true
     }
   }, [navigate])
 

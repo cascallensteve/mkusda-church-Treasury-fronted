@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/tabs'
 
 import { CHURCH } from '@/lib/data'
-import { api } from '@/lib/api'
+import { api, setTokens } from '@/lib/api'
 
 type Step = 'credentials' | 'pin'
 
@@ -102,6 +102,10 @@ export default function LoginPage() {
 
       const data = await api.login(payload)
 
+      if (data.access && data.refresh) {
+        setTokens(data.access, data.refresh)
+      }
+
       if (data.pin_setup_required) {
         setPinMode('setup')
       } else {
@@ -139,16 +143,28 @@ export default function LoginPage() {
         await api.setPin(pin)
         toast.success('PIN set successfully!')
       } else {
-        const payload: any = { email, pin }
-        await api.login(payload)
+        const data = await api.verifyPin(email, pin)
+        if (data.access && data.refresh) {
+          setTokens(data.access, data.refresh)
+        }
         toast.success('PIN verified!')
+
+        const serverUser = data.user || {}
+        localStorage.setItem('isAuthenticated', 'true')
+        localStorage.setItem('user', JSON.stringify({
+          ...serverUser,
+          name: serverUser.full_name || serverUser.username || email,
+          role: 'User',
+        }))
       }
 
-      localStorage.setItem('isAuthenticated', 'true')
-      localStorage.setItem('user', JSON.stringify({
-        name: email,
-        role: 'User',
-      }))
+      if (pinMode === 'setup') {
+        localStorage.setItem('isAuthenticated', 'true')
+        localStorage.setItem('user', JSON.stringify({
+          name: email,
+          role: 'User',
+        }))
+      }
       setLoginSuccess(true)
       setTimeout(() => {
         navigate('/app/dashboard')

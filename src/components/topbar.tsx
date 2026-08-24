@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { CHURCH, notifications } from '@/lib/data'
-import { api } from '@/lib/api'
+import { api, clearTokens } from '@/lib/api'
 
 export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const navigate = useNavigate()
@@ -46,7 +46,7 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     } catch {
       // ignore logout API errors, still clear local state
     } finally {
-      api.clearTokens()
+      clearTokens()
       toast.success('Signed out successfully')
       navigate('/login', { replace: true })
     }
