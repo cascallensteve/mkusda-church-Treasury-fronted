@@ -40,6 +40,7 @@ const groups = [
       { title: 'Members', href: '/app/members', icon: Users },
       { title: 'Tithes', href: '/app/tithes', icon: HandCoins },
       { title: 'Offerings', href: '/app/offerings', icon: Gift },
+      { title: 'Donation Types', href: '/app/donation-types', icon: HandCoins },
     ],
   },
   {

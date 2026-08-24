@@ -146,6 +146,25 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+
+  getDonationTypes: () => request('/donation/donation-types/'),
+
+  createDonationType: (data: { name: string; description?: string }) =>
+    request('/donation/donation-types/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getDonationType: (id: number) => request(`/donation/donation-types/${id}/`),
+
+  updateDonationType: (id: number, data: { name?: string; description?: string }) =>
+    request(`/donation/donation-types/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteDonationType: (id: number) =>
+    request(`/donation/donation-types/${id}/`, { method: 'DELETE' }),
 }
 
 export { clearTokens, getToken, setTokens }
