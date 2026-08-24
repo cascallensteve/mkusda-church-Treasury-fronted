@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { CHURCH } from '@/lib/data'
-import { getPublicDonationTypes, submitDonation } from '@/lib/api'
+import { getPublicDonationTypes, submitDonation } from '../../../service/donations'
 
 type DonationTypeOption = {
   id: number
