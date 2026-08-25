@@ -1,12 +1,12 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Heart,
   ArrowRight,
   CheckCircle2,
-  CreditCard,
   Smartphone,
-  Landmark,
   Mail,
   Phone,
   User as UserIcon,
@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { CHURCH } from '@/lib/data'
-import { getPublicDonationTypes, submitDonation } from '../../../service/donations'
+import { getPublicDonationTypes, submitDonation, initiatePayment, getPaymentStatus } from '../../../service/donations'
 
 type DonationTypeOption = {
   id: number
@@ -27,27 +27,33 @@ type DonationTypeOption = {
   description: string
 }
 
-const PAYMENT_METHODS = [
-  { value: 'mpesa', label: 'M-Pesa', icon: Smartphone },
-  { value: 'card', label: 'Card', icon: CreditCard },
-  { value: 'bank', label: 'Bank Transfer', icon: Landmark },
-]
+type TransactionResponse = {
+  id: number
+  checkout_request_id: string | null
+  status: string
+  amount: string
+  donor_name: string
+  donor_email: string
+  phone_number: string
+  donation_type_name: string
+  created_at: string
+}
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000]
 
 export default function PublicDonationPage() {
   const [donationTypes, setDonationTypes] = useState<DonationTypeOption[]>([])
   const [form, setForm] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    donation_type: '',
+    donation_type_id: '',
+    donor_name: '',
+    donor_email: '',
+    phone_number: '',
     amount: '',
-    payment_method: 'mpesa',
-    message: '',
   })
   const [submitting, setSubmitting] = useState(false)
+  const [checkingPayment, setCheckingPayment] = useState(false)
   const [reference, setReference] = useState<string | null>(null)
+  const [transaction, setTransaction] = useState<TransactionResponse | null>(null)
   const [error, setError] = useState('')
   const [loadingTypes, setLoadingTypes] = useState(true)
 
@@ -55,10 +61,10 @@ export default function PublicDonationPage() {
     const fetchTypes = async () => {
       try {
         const data = await getPublicDonationTypes()
-        const types = (data.results || data) as DonationTypeOption[]
+        const types = data as DonationTypeOption[]
         setDonationTypes(types)
-        if (types.length > 0 && !form.donation_type) {
-          setForm(prev => ({ ...prev, donation_type: String(types[0].id) }))
+        if (types.length > 0 && !form.donation_type_id) {
+          setForm(prev => ({ ...prev, donation_type_id: String(types[0].id) }))
         }
       } catch (err: any) {
         toast.error(err?.body?.detail || err?.message || 'Failed to load donation types')
@@ -69,6 +75,29 @@ export default function PublicDonationPage() {
     fetchTypes()
   }, [])
 
+  useEffect(() => {
+    const pollPaymentStatus = async () => {
+      if (!transaction?.checkout_request_id) return
+      setCheckingPayment(true)
+      try {
+        const status = await getPaymentStatus(transaction.checkout_request_id)
+        setTransaction(status)
+        if (status.status === 'SUCCESS') {
+          toast.success('Payment completed successfully!')
+        } else if (status.status === 'FAILED' || status.status === 'CANCELLED') {
+          toast.error(`Payment ${status.status.toLowerCase()}. Please try again.`)
+        }
+      } catch (err: any) {
+        console.error('Payment status check failed:', err)
+      } finally {
+        setCheckingPayment(false)
+      }
+    }
+
+    const interval = setInterval(pollPaymentStatus, 3000)
+    return () => clearInterval(interval)
+  }, [transaction?.checkout_request_id])
+
   const setField = (key: string, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
@@ -76,13 +105,18 @@ export default function PublicDonationPage() {
     e.preventDefault()
     setError('')
     setReference(null)
+    setTransaction(null)
 
     const amount = Number(form.amount)
-    if (!form.full_name.trim()) {
+    if (!form.donor_name.trim()) {
       setError('Please enter your name.')
       return
     }
-    if (!form.donation_type) {
+    if (!form.donor_email.trim()) {
+      setError('Please enter your email.')
+      return
+    }
+    if (!form.donation_type_id) {
       setError('Please select a donation type.')
       return
     }
@@ -90,30 +124,54 @@ export default function PublicDonationPage() {
       setError('Please enter a valid amount.')
       return
     }
+    if (!form.phone_number.trim()) {
+      setError('Please enter your phone number.')
+      return
+    }
 
     setSubmitting(true)
     try {
       const data = await submitDonation({
-        full_name: form.full_name.trim(),
-        email: form.email.trim() || undefined,
-        phone: form.phone.trim() || undefined,
-        donation_type: form.donation_type,
+        donation_type_id: Number(form.donation_type_id),
+        donor_name: form.donor_name.trim(),
+        donor_email: form.donor_email.trim(),
+        phone_number: form.phone_number.trim(),
         amount,
-        payment_method: form.payment_method,
-        message: form.message.trim() || undefined,
       })
-      const ref =
-        data.reference ||
-        data.receipt ||
-        data.checkout_request_id ||
-        data.transaction_id ||
-        'N/A'
-      setReference(String(ref))
+      setTransaction(data)
+      setReference(data.checkout_request_id || data.id)
       toast.success('Donation submitted successfully')
     } catch (err: any) {
       const msg = err?.body?.detail || err?.message || 'Donation failed. Please try again.'
       setError(typeof msg === 'string' ? msg : 'Donation failed. Please try again.')
       toast.error(typeof msg === 'string' ? msg : 'Donation failed. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleMpesaPayment = async () => {
+    if (!form.donation_type_id || !form.phone_number || !form.amount) {
+      setError('Please fill in all required fields.')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const data = await initiatePayment({
+        donation_type_id: Number(form.donation_type_id),
+        phone_number: form.phone_number.trim(),
+        amount: Number(form.amount),
+        donor_name: form.donor_name.trim() || undefined,
+        donor_email: form.donor_email.trim() || undefined,
+      })
+      setTransaction(data.transaction)
+      setReference(data.checkout_request_id)
+      toast.success('Payment initiated. Please check your phone to complete.')
+    } catch (err: any) {
+      const msg = err?.body?.detail || err?.message || 'Payment initiation failed.'
+      setError(typeof msg === 'string' ? msg : 'Payment initiation failed.')
+      toast.error(typeof msg === 'string' ? msg : 'Payment initiation failed.')
     } finally {
       setSubmitting(false)
     }
@@ -178,12 +236,12 @@ export default function PublicDonationPage() {
           <div className="lg:col-span-3">
             <Card className="shadow-xl rounded-2xl border-0">
               <CardContent className="p-6 md:p-8">
-                {reference ? (
+                {transaction && transaction.status === 'SUCCESS' ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                       <CheckCircle2 className="w-10 h-10 text-green-500" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-800">Thank you!</h3>
+                    <h3 className="text-xl font-semibold text-gray-800">Payment Successful!</h3>
                     <p className="text-sm text-gray-500 mt-1">
                       Your donation has been received.
                     </p>
@@ -195,25 +253,47 @@ export default function PublicDonationPage() {
                       variant="outline"
                       className="mt-6"
                       onClick={() => {
+                        setTransaction(null)
                         setReference(null)
-                        setForm((prev) => ({ ...prev, amount: '', message: '' }))
+                        setForm(prev => ({ ...prev, amount: '' }))
                       }}
                     >
                       Make another donation
                     </Button>
                   </div>
+                ) : transaction ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
+                      {checkingPayment ? (
+                        <div className="w-8 h-8 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-10 h-10 text-yellow-500" />
+                      )}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-800">Awaiting Payment</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Please complete the payment on your phone.
+                    </p>
+                    <p className="mt-4 text-sm text-gray-600">
+                      Checkout Request ID:{' '}
+                      <span className="font-mono font-medium text-gray-800">{transaction.checkout_request_id}</span>
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Status: {transaction.status}
+                    </p>
+                  </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="full_name" className="text-gray-700 font-medium">
-                        Full Name
+                      <Label htmlFor="donor_name" className="text-gray-700 font-medium">
+                        Full Name *
                       </Label>
                       <div className="relative">
                         <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
-                          id="full_name"
-                          value={form.full_name}
-                          onChange={(e) => setField('full_name', e.target.value)}
+                          id="donor_name"
+                          value={form.donor_name}
+                          onChange={(e) => setField('donor_name', e.target.value)}
                           placeholder="Your name"
                           className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl"
                           disabled={submitting}
@@ -224,35 +304,37 @@ export default function PublicDonationPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-gray-700 font-medium">
-                          Email
+                        <Label htmlFor="donor_email" className="text-gray-700 font-medium">
+                          Email *
                         </Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <Input
-                            id="email"
+                            id="donor_email"
                             type="email"
-                            value={form.email}
-                            onChange={(e) => setField('email', e.target.value)}
+                            value={form.donor_email}
+                            onChange={(e) => setField('donor_email', e.target.value)}
                             placeholder="you@example.com"
                             className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl"
                             disabled={submitting}
+                            required
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-gray-700 font-medium">
-                          Phone
+                        <Label htmlFor="phone_number" className="text-gray-700 font-medium">
+                          Phone Number *
                         </Label>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <Input
-                            id="phone"
-                            value={form.phone}
-                            onChange={(e) => setField('phone', e.target.value)}
-                            placeholder="07xxxxxxxx"
+                            id="phone_number"
+                            value={form.phone_number}
+                            onChange={(e) => setField('phone_number', e.target.value)}
+                            placeholder="254712345678"
                             className="pl-10 h-12 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl"
                             disabled={submitting}
+                            required
                           />
                         </div>
                       </div>
@@ -270,9 +352,9 @@ export default function PublicDonationPage() {
                             <button
                               key={type.id}
                               type="button"
-                              onClick={() => setField('donation_type', String(type.id))}
+                              onClick={() => setField('donation_type_id', String(type.id))}
                               className={`rounded-full px-4 py-2 text-sm font-medium border transition-all ${
-                                form.donation_type === String(type.id)
+                                form.donation_type_id === String(type.id)
                                   ? 'bg-indigo-600 text-white border-indigo-600'
                                   : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
                               }`}
@@ -286,7 +368,7 @@ export default function PublicDonationPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="amount" className="text-gray-700 font-medium">
-                        Amount (KES)
+                        Amount (KES) *
                       </Label>
                       <Input
                         id="amount"
@@ -317,68 +399,50 @@ export default function PublicDonationPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-gray-700 font-medium">Payment Method</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {PAYMENT_METHODS.map((method) => {
-                          const Icon = method.icon
-                          return (
-                            <button
-                              key={method.value}
-                              type="button"
-                              onClick={() => setField('payment_method', method.value)}
-                              className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border py-3 transition-all ${
-                                form.payment_method === method.value
-                                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                  : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300'
-                              }`}
-                            >
-                              <Icon className="w-5 h-5" />
-                              <span className="text-xs font-medium">{method.label}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="message" className="text-gray-700 font-medium">
-                        Message (optional)
-                      </Label>
-                      <textarea
-                        id="message"
-                        value={form.message}
-                        onChange={(e) => setField('message', e.target.value)}
-                        placeholder="Add a note..."
-                        rows={3}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-indigo-400 focus:outline-none"
-                        disabled={submitting}
-                      />
-                    </div>
-
                     {error && (
                       <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-200">
                         {error}
                       </div>
                     )}
 
-                    <Button
-                      type="submit"
-                      className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
-                      disabled={submitting}
-                    >
-                      {submitting ? (
-                        <span className="flex items-center gap-2">
-                          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          Processing...
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-2">
-                          Donate KES {form.amount ? Number(form.amount).toLocaleString() : '0'}
-                          <ArrowRight className="w-5 h-5" />
-                        </span>
-                      )}
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="submit"
+                        className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                        disabled={submitting}
+                      >
+                        {submitting ? (
+                          <span className="flex items-center gap-2">
+                            <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Processing...
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            Donate KES {form.amount ? Number(form.amount).toLocaleString() : '0'}
+                            <ArrowRight className="w-5 h-5" />
+                          </span>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-12"
+                        onClick={handleMpesaPayment}
+                        disabled={submitting}
+                      >
+                        {submitting ? (
+                          <span className="flex items-center gap-2">
+                            <span className="size-4 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" />
+                            Initiating M-Pesa...
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            <Smartphone className="w-5 h-5" />
+                            Pay with M-Pesa
+                          </span>
+                        )}
+                      </Button>
+                    </div>
 
                     <p className="text-center text-xs text-gray-400">
                       Your payment is secure and encrypted.
@@ -391,6 +455,7 @@ export default function PublicDonationPage() {
         </div>
       </main>
 
+      {/* Footer */}
       <footer className="border-t bg-white/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-6 text-center">
           <p className="text-sm text-gray-500">{CHURCH.location}</p>

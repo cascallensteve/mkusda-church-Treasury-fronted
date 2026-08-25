@@ -27,12 +27,35 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
 }
 
 export async function getPublicDonationTypes(): Promise<any> {
-  return request('/donation/public/donation-types/')
+  return request('/donation/public/')
 }
 
-export async function submitDonation(payload: Record<string, any>): Promise<any> {
-  return request('/donation/public/submit/', {
+export async function submitDonation(payload: {
+  donation_type_id: number
+  donor_name: string
+  donor_email: string
+  phone_number: string
+  amount: number
+}): Promise<any> {
+  return request('/donation/public/donate/', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+export async function initiatePayment(payload: {
+  donation_type_id: number
+  phone_number: string
+  amount: number
+  donor_name?: string
+  donor_email?: string
+}): Promise<any> {
+  return request('/payments/initiate/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getPaymentStatus(checkout_request_id: string): Promise<any> {
+  return request(`/payments/status/?checkout_request_id=${encodeURIComponent(checkout_request_id)}`)
 }
