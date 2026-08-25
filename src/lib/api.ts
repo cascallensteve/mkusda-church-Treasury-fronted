@@ -161,6 +161,10 @@ export const api = {
 
   deleteDonationType: (id: number) =>
     donationRequest(`/donation/donation-types/${id}/`, { method: 'DELETE' }),
+
+  getTransactions: () => donationRequest('/payments/transactions/'),
+
+  getTransaction: (id: number) => donationRequest(`/payments/transactions/${id}/`),
 }
 
 export { clearTokens, getToken, setTokens }

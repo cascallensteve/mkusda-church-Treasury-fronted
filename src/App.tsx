@@ -27,6 +27,7 @@ import UsersPage from '@/pages/app/users'
 import SettingsPage from '@/pages/app/settings'
 import ProfilePage from '@/pages/app/profile'
 import DonationTypesPage from '@/pages/app/donation-types'
+import TransactionsPage from '@/pages/app/transactions'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -126,6 +127,7 @@ export default function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="donation-types" element={<DonationTypesPage />} />
+        <Route path="transactions" element={<TransactionsPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
