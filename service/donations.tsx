@@ -1,4 +1,7 @@
-const PUBLIC_API = import.meta.env.VITE_PUBLIC_API_BASE || '/api'
+const isDev = import.meta.env.DEV
+const PUBLIC_API = isDev
+  ? '/api'
+  : (import.meta.env.VITE_PUBLIC_API_BASE || '/api')
 
 async function request(url: string, options: RequestInit = {}): Promise<any> {
   const headers: Record<string, string> = {

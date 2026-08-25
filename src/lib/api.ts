@@ -1,5 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_BASE || '/api'
-const DONATION_API = import.meta.env.VITE_DONATION_API_BASE || '/api'
+const isDev = import.meta.env.DEV
+
+const API_BASE = isDev
+  ? '/api/auth'
+  : (import.meta.env.VITE_API_BASE || '/api/auth')
+
+const DONATION_API = isDev
+  ? '/api'
+  : (import.meta.env.VITE_DONATION_API_BASE || '/api')
 
 function getToken() {
   return localStorage.getItem('access_token')
@@ -54,6 +61,7 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
     window.location.href = '/login'
     return Promise.reject(new Error('Session expired'))
   }
+  
 
   return parseResponse(res)
 }
