@@ -181,90 +181,92 @@ export default function TransactionsPage() {
               {searchTerm || selectedStatus !== 'all' ? 'No transactions match your filters.' : 'No transactions found.'}
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader className="bg-slate-50">
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Donor</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedTransactions.map((tx) => {
-                    const statusConfig = STATUS_CONFIG[tx.status] || STATUS_CONFIG.PENDING
-                    const StatusIcon = statusConfig.icon
-                    return (
-                      <TableRow key={tx.id} className="hover:bg-slate-50">
-                        <TableCell className="font-medium">#{tx.id}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">{tx.donor_name}</span>
-                            <span className="text-xs text-gray-500">{tx.donor_email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{tx.donation_type_name}</TableCell>
-                        <TableCell className="font-semibold">{formatKES(Number(tx.amount))}</TableCell>
-                        <TableCell className="text-sm">{tx.phone_number}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusConfig.color}`}>
-                            <StatusIcon className="h-3 w-3" />
-                            {statusConfig.label}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-sm whitespace-nowrap">
-                          {new Date(tx.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleView(tx)}
-                              className="h-8 w-8 text-gray-600 hover:text-indigo-600"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="gap-1"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="gap-1"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+            <div className="space-y-4">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader className="bg-slate-50">
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Donor</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedTransactions.map((tx) => {
+                      const statusConfig = STATUS_CONFIG[tx.status] || STATUS_CONFIG.PENDING
+                      const StatusIcon = statusConfig.icon
+                      return (
+                        <TableRow key={tx.id} className="hover:bg-slate-50">
+                          <TableCell className="font-medium">#{tx.id}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">{tx.donor_name}</span>
+                              <span className="text-xs text-gray-500">{tx.donor_email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{tx.donation_type_name}</TableCell>
+                          <TableCell className="font-semibold">{formatKES(Number(tx.amount))}</TableCell>
+                          <TableCell className="text-sm">{tx.phone_number}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusConfig.color}`}>
+                              <StatusIcon className="h-3 w-3" />
+                              {statusConfig.label}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">
+                            {new Date(tx.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleView(tx)}
+                                className="h-8 w-8 text-gray-600 hover:text-indigo-600"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
               </div>
-            )}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="gap-1"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
