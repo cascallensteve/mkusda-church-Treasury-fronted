@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Eye, Search, Loader2, CheckCircle2, XCircle, AlertCircle, Clock } from 'lucide-react'
+import { Eye, Search, Loader2, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -68,6 +68,8 @@ export default function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
 
   const fetchTransactions = async () => {
     setIsLoading(true)
@@ -95,6 +97,16 @@ export default function TransactionsPage() {
     const matchesStatus = selectedStatus === 'all' || tx.status === selectedStatus
     return matchesSearch && matchesStatus
   })
+
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize))
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  )
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedStatus])
 
   const totalAmount = transactions.reduce((sum, tx) => sum + Number(tx.amount), 0)
   const pendingCount = transactions.filter(tx => tx.status === 'PENDING').length
@@ -184,7 +196,7 @@ export default function TransactionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTransactions.map((tx) => {
+                  {paginatedTransactions.map((tx) => {
                     const statusConfig = STATUS_CONFIG[tx.status] || STATUS_CONFIG.PENDING
                     const StatusIcon = statusConfig.icon
                     return (
@@ -226,6 +238,33 @@ export default function TransactionsPage() {
                 </TableBody>
               </Table>
             </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="gap-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           )}
         </CardContent>
       </Card>
