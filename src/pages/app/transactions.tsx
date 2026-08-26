@@ -87,10 +87,10 @@ export default function TransactionsPage() {
 
   const filteredTransactions = transactions.filter(tx => {
     const matchesSearch =
-      tx.donor_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tx.donor_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tx.donor_name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tx.donor_email ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.phone_number.includes(searchTerm) ||
-      tx.donation_type_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tx.donation_type_name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(tx.id).includes(searchTerm)
     const matchesStatus = selectedStatus === 'all' || tx.status === selectedStatus
     return matchesSearch && matchesStatus

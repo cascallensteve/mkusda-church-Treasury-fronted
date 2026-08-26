@@ -1,7 +1,8 @@
-const isDev = import.meta.env.DEV
-const PUBLIC_API = isDev
-  ? '/api'
-  : (import.meta.env.VITE_PUBLIC_API_BASE || '/api')
+const PUBLIC_API = import.meta.env.VITE_PUBLIC_API_BASE || 'https://churchppmkusdabackend.vercel.app/api'
+
+function joinUrl(base: string, path: string): string {
+  return `${base.replace(/\/+$/, '')}${path}`
+}
 
 async function request(url: string, options: RequestInit = {}): Promise<any> {
   const headers: Record<string, string> = {
@@ -9,7 +10,7 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
     ...(options.headers as Record<string, string> || {}),
   }
 
-  const res = await fetch(`${PUBLIC_API}${url}`, {
+  const res = await fetch(joinUrl(PUBLIC_API, url), {
     ...options,
     headers,
   })

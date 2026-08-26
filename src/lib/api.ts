@@ -1,12 +1,6 @@
-const isDev = import.meta.env.DEV
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://churchppmkusdabackend.vercel.app/api/auth'
 
-const API_BASE = isDev
-  ? '/api/auth'
-  : (import.meta.env.VITE_API_BASE || '/api/auth')
-
-const DONATION_API = isDev
-  ? '/api'
-  : (import.meta.env.VITE_DONATION_API_BASE || '/api')
+const DONATION_API = import.meta.env.VITE_DONATION_API_BASE || 'https://churchppmkusdabackend.vercel.app/api'
 
 function getToken() {
   return localStorage.getItem('access_token')
@@ -28,6 +22,10 @@ function clearTokens() {
   localStorage.removeItem('user')
 }
 
+function joinUrl(base: string, path: string): string {
+  return `${base.replace(/\/+$/, '')}${path}`
+}
+
 async function request(url: string, options: RequestInit = {}): Promise<any> {
   const token = getToken()
   const headers: Record<string, string> = {
@@ -38,7 +36,7 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${API_BASE}${url}`, {
+  const res = await fetch(joinUrl(API_BASE, url), {
     ...options,
     headers,
   })
@@ -51,7 +49,7 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
         ...(options.headers as Record<string, string> || {}),
       }
       retryHeaders['Authorization'] = `Bearer ${getToken()}`
-      const retryRes = await fetch(`${API_BASE}${url}`, {
+      const retryRes = await fetch(joinUrl(API_BASE, url), {
         ...options,
         headers: retryHeaders,
       })
@@ -68,7 +66,7 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
 
 async function tryRefreshToken(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/token/refresh/`, {
+    const res = await fetch(joinUrl(API_BASE, '/token/refresh/'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: getRefreshToken() }),
@@ -108,7 +106,7 @@ async function donationRequest(url: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${DONATION_API}${url}`, {
+  const res = await fetch(joinUrl(DONATION_API, url), {
     ...options,
     headers,
   })

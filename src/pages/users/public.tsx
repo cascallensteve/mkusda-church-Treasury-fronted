@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { CHURCH } from '@/lib/data'
-import { getPublicDonationTypes, submitDonation, initiatePayment, getPaymentStatus } from '../../../service/donations'
+import { getPublicDonationTypes, initiatePayment, getPaymentStatus } from '../../../service/donations'
 
 type DonationTypeOption = {
   id: number
@@ -112,8 +112,8 @@ export default function PublicDonationPage() {
       setError('Please enter your name.')
       return
     }
-    if (!form.donor_email.trim()) {
-      setError('Please enter your email.')
+    if (!form.donor_email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.donor_email.trim())) {
+      setError('Please enter a valid email address.')
       return
     }
     if (!form.donation_type_id) {
@@ -124,35 +124,8 @@ export default function PublicDonationPage() {
       setError('Please enter a valid amount.')
       return
     }
-    if (!form.phone_number.trim()) {
-      setError('Please enter your phone number.')
-      return
-    }
-
-    setSubmitting(true)
-    try {
-      const data = await submitDonation({
-        donation_type_id: Number(form.donation_type_id),
-        donor_name: form.donor_name.trim(),
-        donor_email: form.donor_email.trim(),
-        phone_number: form.phone_number.trim(),
-        amount,
-      })
-      setTransaction(data)
-      setReference(data.checkout_request_id || data.id)
-      toast.success('Donation submitted successfully')
-    } catch (err: any) {
-      const msg = err?.body?.detail || err?.message || 'Donation failed. Please try again.'
-      setError(typeof msg === 'string' ? msg : 'Donation failed. Please try again.')
-      toast.error(typeof msg === 'string' ? msg : 'Donation failed. Please try again.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleMpesaPayment = async () => {
-    if (!form.donation_type_id || !form.phone_number || !form.amount) {
-      setError('Please fill in all required fields.')
+    if (!/^254\d{9}$/.test(form.phone_number.trim())) {
+      setError('Please enter a valid Kenyan phone number (e.g., 254712345678).')
       return
     }
 
@@ -161,9 +134,9 @@ export default function PublicDonationPage() {
       const data = await initiatePayment({
         donation_type_id: Number(form.donation_type_id),
         phone_number: form.phone_number.trim(),
-        amount: Number(form.amount),
-        donor_name: form.donor_name.trim() || undefined,
-        donor_email: form.donor_email.trim() || undefined,
+        amount,
+        donor_name: form.donor_name.trim(),
+        donor_email: form.donor_email.trim(),
       })
       setTransaction(data.transaction)
       setReference(data.checkout_request_id)
@@ -414,31 +387,13 @@ export default function PublicDonationPage() {
                         {submitting ? (
                           <span className="flex items-center gap-2">
                             <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            Processing...
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            Donate KES {form.amount ? Number(form.amount).toLocaleString() : '0'}
-                            <ArrowRight className="w-5 h-5" />
-                          </span>
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full h-12"
-                        onClick={handleMpesaPayment}
-                        disabled={submitting}
-                      >
-                        {submitting ? (
-                          <span className="flex items-center gap-2">
-                            <span className="size-4 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" />
-                            Initiating M-Pesa...
+                            Initiating Payment...
                           </span>
                         ) : (
                           <span className="flex items-center gap-2">
                             <Smartphone className="w-5 h-5" />
-                            Pay with M-Pesa
+                            Donate via M-Pesa
+                            <ArrowRight className="w-5 h-5" />
                           </span>
                         )}
                       </Button>
