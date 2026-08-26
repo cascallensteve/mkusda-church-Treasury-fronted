@@ -52,7 +52,6 @@ export default function PublicDonationPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [checkingPayment, setCheckingPayment] = useState(false)
-  const [reference, setReference] = useState<string | null>(null)
   const [transaction, setTransaction] = useState<TransactionResponse | null>(null)
   const [error, setError] = useState('')
   const [loadingTypes, setLoadingTypes] = useState(true)
@@ -147,7 +146,6 @@ export default function PublicDonationPage() {
     setCountdown(40)
     setIsTimedOut(false)
     setError('')
-    setReference(null)
     setTransaction(null)
 
     const amount = Number(form.amount)
@@ -182,7 +180,6 @@ export default function PublicDonationPage() {
         donor_email: form.donor_email.trim(),
       })
       setTransaction(data.transaction)
-      setReference(data.checkout_request_id)
       toast.success('Payment initiated. Please check your phone to complete.')
     } catch (err: any) {
       const msg = err?.body?.detail || err?.message || 'Payment initiation failed.'
@@ -266,7 +263,6 @@ export default function PublicDonationPage() {
                       className="mt-6"
                       onClick={() => {
                         setTransaction(null)
-                        setReference(null)
                         setForm(prev => ({ ...prev, amount: '' }))
                       }}
                     >
