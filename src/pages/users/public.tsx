@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Heart,
@@ -56,6 +56,9 @@ export default function PublicDonationPage() {
   const [transaction, setTransaction] = useState<TransactionResponse | null>(null)
   const [error, setError] = useState('')
   const [loadingTypes, setLoadingTypes] = useState(true)
+  const [countdown, setCountdown] = useState(40)
+  const [isTimedOut, setIsTimedOut] = useState(false)
+  const pollingRef = useRef<number | null>(null)
 
   useEffect(() => {
     const fetchTypes = async () => {
@@ -76,6 +79,8 @@ export default function PublicDonationPage() {
   }, [])
 
   useEffect(() => {
+    if (!transaction?.checkout_request_id) return
+
     const pollPaymentStatus = async () => {
       if (!transaction?.checkout_request_id) return
       setCheckingPayment(true)
@@ -84,8 +89,16 @@ export default function PublicDonationPage() {
         setTransaction(status)
         if (status.status === 'SUCCESS') {
           toast.success('Payment completed successfully!')
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current)
+            pollingRef.current = null
+          }
         } else if (status.status === 'FAILED' || status.status === 'CANCELLED') {
           toast.error(`Payment ${status.status.toLowerCase()}. Please try again.`)
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current)
+            pollingRef.current = null
+          }
         }
       } catch (err: any) {
         console.error('Payment status check failed:', err)
@@ -94,15 +107,45 @@ export default function PublicDonationPage() {
       }
     }
 
-    const interval = setInterval(pollPaymentStatus, 3000)
-    return () => clearInterval(interval)
+    pollingRef.current = setInterval(pollPaymentStatus, 3000)
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
   }, [transaction?.checkout_request_id])
+
+  useEffect(() => {
+    if (!transaction?.checkout_request_id || isTimedOut) return
+    if (transaction.status !== 'PENDING') return
+
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          setIsTimedOut(true)
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current)
+            pollingRef.current = null
+          }
+          toast.error('Confirmation timeout. Please check your phone or try again.')
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [transaction?.checkout_request_id, transaction?.status, isTimedOut])
 
   const setField = (key: string, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setCountdown(40)
+    setIsTimedOut(false)
     setError('')
     setReference(null)
     setTransaction(null)
@@ -209,7 +252,7 @@ export default function PublicDonationPage() {
           <div className="lg:col-span-3">
             <Card className="shadow-xl rounded-2xl border-0">
               <CardContent className="p-6 md:p-8">
-                {transaction && transaction.status === 'SUCCESS' ? (
+                 {transaction && transaction.status === 'SUCCESS' ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                       <CheckCircle2 className="w-10 h-10 text-green-500" />
@@ -217,10 +260,6 @@ export default function PublicDonationPage() {
                     <h3 className="text-xl font-semibold text-gray-800">Payment Successful!</h3>
                     <p className="text-sm text-gray-500 mt-1">
                       Your donation has been received.
-                    </p>
-                    <p className="mt-4 text-sm text-gray-600">
-                      Reference:{' '}
-                      <span className="font-mono font-medium text-gray-800">{reference}</span>
                     </p>
                     <Button
                       variant="outline"
@@ -247,10 +286,15 @@ export default function PublicDonationPage() {
                     <p className="text-sm text-gray-500 mt-1">
                       Please complete the payment on your phone.
                     </p>
-                    <p className="mt-4 text-sm text-gray-600">
-                      Checkout Request ID:{' '}
-                      <span className="font-mono font-medium text-gray-800">{transaction.checkout_request_id}</span>
-                    </p>
+                    {isTimedOut ? (
+                      <p className="mt-4 text-sm text-red-600">
+                        Confirmation timeout. Please check your phone or try again.
+                      </p>
+                    ) : (
+                      <p className="mt-4 text-sm text-gray-600">
+                        Waiting for confirmation... {countdown}s
+                      </p>
+                    )}
                     <p className="text-xs text-gray-400 mt-2">
                       Status: {transaction.status}
                     </p>
