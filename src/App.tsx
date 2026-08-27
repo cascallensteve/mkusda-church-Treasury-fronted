@@ -27,6 +27,7 @@ import UsersPage from '@/pages/app/users'
 import SettingsPage from '@/pages/app/settings'
 import ProfilePage from '@/pages/app/profile'
 import DonationTypesPage from '@/pages/app/donation-types'
+import DonationTypesStatisticsPage from '@/pages/app/donation-types/statistics'
 import TransactionsPage from '@/pages/app/transactions'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -127,6 +128,7 @@ export default function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="donation-types" element={<DonationTypesPage />} />
+        <Route path="donation-types/statistics" element={<DonationTypesStatisticsPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

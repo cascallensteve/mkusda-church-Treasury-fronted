@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { HandCoins, Plus, Search, Loader2, CheckCircle2, Edit, Trash2, ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { HandCoins, Plus, Search, Loader2, CheckCircle2, Edit, Trash2, ArrowLeft, BarChart3 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -40,6 +41,7 @@ type DonationType = {
 }
 
 export default function DonationTypesPage() {
+  const navigate = useNavigate()
   const [donationTypes, setDonationTypes] = useState<DonationType[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -145,10 +147,16 @@ export default function DonationTypesPage() {
         description="Manage donation categories and types"
         actions={
           !isFormOpen ? (
-            <Button onClick={() => { setSelectedType(null); setFormData({ name: '', description: '' }); setIsFormOpen(true) }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Donation Type
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate('/app/donation-types/statistics')}>
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Statistics
+              </Button>
+              <Button onClick={() => { setSelectedType(null); setFormData({ name: '', description: '' }); setIsFormOpen(true) }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Donation Type
+              </Button>
+            </div>
           ) : null
         }
       />

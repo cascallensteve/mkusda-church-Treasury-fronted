@@ -11,6 +11,15 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.__SERVER_FORWARD_CONSOLE__ = {
+        log: console.log,
+        warn: console.warn,
+        error: console.error,
+        info: console.info,
+        debug: console.debug,
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

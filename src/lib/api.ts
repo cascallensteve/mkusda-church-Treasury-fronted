@@ -171,6 +171,8 @@ export const api = {
   getTransactions: () => donationRequest('/payments/transactions/'),
 
   getTransaction: (id: number) => donationRequest(`/payments/transactions/${id}/`),
+
+  getDonationStats: () => donationRequest('/payments/stats/donation-types/'),
 }
 
 export { clearTokens, getToken, setTokens }
