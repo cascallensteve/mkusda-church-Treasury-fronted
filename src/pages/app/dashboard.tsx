@@ -141,8 +141,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Net Position Card */}
-        <Card className="border-0 shadow-sm mb-6 bg-gradient-to-r from-indigo-600 to-purple-600">
-          <CardContent className="p-6">
+        <Card className="border-0 shadow-sm mb-6 overflow-hidden relative">
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-[0.87]"
+            style={{ backgroundImage: 'url(https://res.cloudinary.com/wgxqiqmi/image/upload/v1787833325/finance-calculator-bank-notes.webp)' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/90 to-purple-600/90" />
+          <CardContent className="p-6 relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <p className="text-indigo-100 text-sm">Net Position</p>

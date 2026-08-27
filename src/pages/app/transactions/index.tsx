@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Eye, Search, Loader2, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -15,20 +16,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 
 import { PageHeader } from '@/components/page-header'
 import { StatCard } from '@/components/stat-card'
@@ -62,12 +55,11 @@ const STATUS_CONFIG = {
 }
 
 export default function TransactionsPage() {
+  const navigate = useNavigate()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
-  const [isViewOpen, setIsViewOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
@@ -113,8 +105,7 @@ export default function TransactionsPage() {
   const failedCount = transactions.filter(tx => tx.status === 'FAILED' || tx.status === 'CANCELLED').length
 
   const handleView = (tx: Transaction) => {
-    setSelectedTransaction(tx)
-    setIsViewOpen(true)
+    navigate(`/app/transactions/${tx.id}`)
   }
 
   return (
@@ -228,6 +219,7 @@ export default function TransactionsPage() {
                                 size="icon"
                                 onClick={() => handleView(tx)}
                                 className="h-8 w-8 text-gray-600 hover:text-indigo-600"
+                                title="View transaction details"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -270,87 +262,6 @@ export default function TransactionsPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* View Transaction Dialog */}
-      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-lg">
-          {selectedTransaction && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Transaction Details</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold">Transaction #{selectedTransaction.id}</h3>
-                    <p className="text-sm text-gray-500">{selectedTransaction.donation_type_name}</p>
-                  </div>
-                  {(() => {
-                    const statusConfig = STATUS_CONFIG[selectedTransaction.status] || STATUS_CONFIG.PENDING
-                    const StatusIcon = statusConfig.icon
-                    return (
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusConfig.color}`}>
-                        <StatusIcon className="h-3 w-3" />
-                        {statusConfig.label}
-                      </span>
-                    )
-                  })()}
-                </div>
-
-                <Separator />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">Donor Name</p>
-                    <p className="text-sm font-medium">{selectedTransaction.donor_name}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">Donor Email</p>
-                    <p className="text-sm font-medium">{selectedTransaction.donor_email}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">Phone Number</p>
-                    <p className="text-sm font-medium">{selectedTransaction.phone_number}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">Amount</p>
-                    <p className="text-sm font-bold text-lg">{formatKES(Number(selectedTransaction.amount))}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">M-Pesa Receipt</p>
-                    <p className="text-sm font-medium">{selectedTransaction.mpesa_receipt || '—'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">Checkout Request ID</p>
-                    <p className="text-sm font-mono">{selectedTransaction.checkout_request_id || '—'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">Merchant Request ID</p>
-                    <p className="text-sm font-mono">{selectedTransaction.merchant_request_id || '—'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">Created At</p>
-                    <p className="text-sm">{new Date(selectedTransaction.created_at).toLocaleString()}</p>
-                  </div>
-                </div>
-
-                {selectedTransaction.transaction_desc && (
-                  <>
-                    <Separator />
-                    <div className="space-y-1">
-                      <p className="text-xs text-gray-500">Description</p>
-                      <p className="text-sm">{selectedTransaction.transaction_desc}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-              <DialogFooter>
-                <Button onClick={() => setIsViewOpen(false)}>Close</Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

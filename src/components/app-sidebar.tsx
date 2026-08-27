@@ -5,18 +5,13 @@ import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Landmark,
-  Users,
   HandCoins,
-  Gift,
-  Building2,
   FolderKanban,
-  Wallet,
   Receipt,
   TrendingUp,
   FileBarChart,
   ShieldCheck,
   FileText,
-  UserCog,
   User,
   Settings,
   ChevronLeft,
@@ -37,20 +32,14 @@ const groups = [
   {
     label: 'Giving',
     items: [
-      { title: 'Members', href: '/app/members', icon: Users },
-      { title: 'Tithes', href: '/app/tithes', icon: HandCoins },
-      { title: 'Offerings', href: '/app/offerings', icon: Gift },
-      { title: 'Donation Types', href: '/app/donation-types', icon: HandCoins },
+      { title: 'T and Non-T Funds', href: '/app/donation-types', icon: HandCoins },
       { title: 'Transactions', href: '/app/transactions', icon: Receipt },
     ],
   },
   {
     label: 'Operations',
     items: [
-      { title: 'Departments', href: '/app/departments', icon: Building2 },
       { title: 'Projects', href: '/app/projects', icon: FolderKanban },
-      { title: 'Budgets', href: '/app/budgets', icon: Wallet },
-      { title: 'Bank Accounts', href: '/app/bank-accounts', icon: Landmark },
     ],
   },
   {
@@ -66,7 +55,6 @@ const groups = [
       { title: 'Reports', href: '/app/reports', icon: FileBarChart },
       { title: 'Audits', href: '/app/audits', icon: ShieldCheck },
       { title: 'Documents', href: '/app/documents', icon: FileText },
-      { title: 'Users', href: '/app/users', icon: UserCog },
       { title: 'Profile', href: '/app/profile', icon: User },
       { title: 'Settings', href: '/app/settings', icon: Settings },
     ],

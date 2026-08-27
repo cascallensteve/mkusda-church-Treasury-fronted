@@ -1,25 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  Landmark,
-  Wallet,
-  ArrowUpRight,
-  ArrowDownRight,
-  Download,
-  Plus,
-  RefreshCcw,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  ArrowLeft,
-} from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Trash2, Edit, Shield, Loader2, Users } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -27,546 +15,264 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 import { PageHeader } from '@/components/page-header'
 import { StatCard } from '@/components/stat-card'
-import { CHURCH, formatKES } from '@/lib/data'
+import { api } from '@/lib/api'
 
-const bankAccounts = [
-  { id: 'ACC-1', bank: 'KCB Bank', accountNumber: '****4821', branch: 'Nairobi Main', balance: 4120450, type: 'Current' },
-  { id: 'ACC-2', bank: 'Equity Bank', accountNumber: '****1093', branch: 'Kenyatta Avenue', balance: 1685000, type: 'Savings' },
-  { id: 'ACC-3', bank: 'Co-operative Bank', accountNumber: '****7756', branch: 'City Centre', balance: 315000, type: 'Building Fund' },
-]
-
-const bankTransactions = [
-  { id: 'TXN-1', date: '2026-07-11', description: 'Sabbath collection deposit', account: 'KCB Bank', type: 'Deposit', amount: 296400 },
-  { id: 'TXN-2', date: '2026-07-09', description: 'Building fund pledge', account: 'Co-operative Bank', type: 'Deposit', amount: 350000 },
-  { id: 'TXN-3', date: '2026-07-08', description: 'Electricity & water payment', account: 'KCB Bank', type: 'Withdrawal', amount: 48500 },
-  { id: 'TXN-4', date: '2026-07-05', description: 'Pastor stipend', account: 'KCB Bank', type: 'Withdrawal', amount: 180000 },
-  { id: 'TXN-5', date: '2026-07-02', description: 'Transfer to savings', account: 'Equity Bank', type: 'Deposit', amount: 200000 },
-  { id: 'TXN-6', date: '2026-06-29', description: 'Crusade materials', account: 'KCB Bank', type: 'Withdrawal', amount: 142000 },
-  { id: 'TXN-7', date: '2026-06-25', description: 'Youth camp transport', account: 'Equity Bank', type: 'Withdrawal', amount: 63500 },
-  { id: 'TXN-8', date: '2026-06-20', description: 'Special offering deposit', account: 'KCB Bank', type: 'Deposit', amount: 210000 },
-]
-
-const recentTransactions = [
-  { id: 'TXN-1', date: '2026-07-11', description: 'Sabbath collection deposit', account: 'KCB Bank', type: 'Deposit', amount: 296400, category: 'Income' },
-  { id: 'TXN-2', date: '2026-07-09', description: 'Building fund pledge', account: 'Co-operative Bank', type: 'Deposit', amount: 350000, category: 'Income' },
-  { id: 'TXN-3', date: '2026-07-08', description: 'Electricity & water payment', account: 'KCB Bank', type: 'Withdrawal', amount: 48500, category: 'Utilities' },
-  { id: 'TXN-4', date: '2026-07-05', description: 'Pastor stipend', account: 'KCB Bank', type: 'Withdrawal', amount: 180000, category: 'Pastor Support' },
-  { id: 'TXN-5', date: '2026-07-02', description: 'Transfer to savings', account: 'Equity Bank', type: 'Deposit', amount: 200000, category: 'Transfer' },
-  { id: 'TXN-6', date: '2026-06-29', description: 'Crusade materials', account: 'KCB Bank', type: 'Withdrawal', amount: 142000, category: 'Evangelism' },
-  { id: 'TXN-7', date: '2026-06-25', description: 'Youth camp transport', account: 'Equity Bank', type: 'Withdrawal', amount: 63500, category: 'Youth Ministry' },
-  { id: 'TXN-8', date: '2026-06-20', description: 'Special offering deposit', account: 'KCB Bank', type: 'Deposit', amount: 210000, category: 'Income' },
-]
+type Admin = {
+  id: number
+  name: string
+  email: string
+  phone?: string
+  role: string
+  profile_picture?: string
+  created_at: string
+}
 
 export default function TreasuryPage() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedType, setSelectedType] = useState('all')
-  const [selectedAccount, setSelectedAccount] = useState('all')
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isReconcileDialogOpen, setIsReconcileDialogOpen] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
-
+  const [admins, setAdmins] = useState<Admin[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
-    type: 'Deposit',
-    account: 'KCB Bank',
-    amount: '',
-    category: 'Income',
-    description: '',
-    reference: '',
-    notes: '',
+    name: '',
+    email: '',
+    phone: '',
+    role: 'Admin',
+    password: '',
   })
 
-  const totalIncome = bankTransactions
-    .filter(t => t.type === 'Deposit')
-    .reduce((sum, t) => sum + t.amount, 0)
+  const fetchAdmins = async () => {
+    setIsLoading(true)
+    try {
+      const data = await api.getFullProfile()
+      setAdmins(data.admins || [])
+    } catch (err: any) {
+      toast.error(err?.body?.detail || err?.message || 'Failed to load admins')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  const totalExpenses = bankTransactions
-    .filter(t => t.type === 'Withdrawal')
-    .reduce((sum, t) => sum + t.amount, 0)
+  useEffect(() => {
+    fetchAdmins()
+  }, [])
 
-  const totalBalance = bankAccounts.reduce((sum, a) => sum + a.balance, 0)
-
-  const filteredTransactions = recentTransactions.filter(t => {
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          t.account.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          t.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = selectedType === 'all' || t.type.toLowerCase() === selectedType.toLowerCase()
-    const matchesAccount = selectedAccount === 'all' || t.account === selectedAccount
-    return matchesSearch && matchesType && matchesAccount
-  })
-
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage)
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const amount = Number(formData.amount)
-    if (!amount || amount <= 0) return
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+      toast.error('Name, email and password are required')
+      return
+    }
 
-    alert('Transaction recorded successfully!')
-    setIsDialogOpen(false)
-    setFormData({
-      type: 'Deposit',
-      account: 'KCB Bank',
-      amount: '',
-      category: 'Income',
-      description: '',
-      reference: '',
-      notes: '',
-    })
+    setIsSubmitting(true)
+    try {
+      if (selectedAdmin) {
+        toast.success('Admin updated successfully')
+      } else {
+        toast.success('Admin added successfully')
+      }
+      setIsFormOpen(false)
+      setSelectedAdmin(null)
+      setFormData({ name: '', email: '', phone: '', role: 'Admin', password: '' })
+      fetchAdmins()
+    } catch (err: any) {
+      toast.error(err?.body?.detail || err?.message || 'Operation failed')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleReconcile = () => {
-    alert('Bank reconciliation completed successfully!')
-    setIsReconcileDialogOpen(false)
+  const handleEdit = (admin: Admin) => {
+    setSelectedAdmin(admin)
+    setFormData({
+      name: admin.name,
+      email: admin.email,
+      phone: admin.phone || '',
+      role: admin.role,
+      password: '',
+    })
+    setIsFormOpen(true)
+  }
+
+  const handleDelete = async () => {
+    if (!selectedAdmin) return
+    setIsSubmitting(true)
+    try {
+      toast.success('Admin deleted successfully')
+      setIsDeleteDialogOpen(false)
+      setSelectedAdmin(null)
+      fetchAdmins()
+    } catch (err: any) {
+      toast.error(err?.body?.detail || err?.message || 'Delete failed')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (isFormOpen) {
+    return (
+      <div className="relative min-h-[500px]">
+        <Card className="absolute inset-0 z-10 overflow-auto rounded-none border-0 shadow-lg">
+          <CardContent className="p-6 max-w-2xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <Button variant="outline" onClick={() => { setIsFormOpen(false); setSelectedAdmin(null); setFormData({ name: '', email: '', phone: '', role: 'Admin', password: '' }) }} className="gap-2">
+                <Shield className="w-4 h-4" />
+                Back
+              </Button>
+              <div>
+                <h2 className="text-lg font-semibold">{selectedAdmin ? 'Edit Admin' : 'Add New Admin'}</h2>
+                <p className="text-sm text-muted-foreground">{selectedAdmin ? 'Update admin details' : 'Create a new admin account'}</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter full name" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="admin@example.com" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="254XXXXXXXXX" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Input id="role" name="role" value={formData.role} onChange={handleInputChange} placeholder="Admin" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">{selectedAdmin ? 'New Password (leave blank to keep current)' : 'Password *'}</Label>
+                <Input id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Enter password" required={!selectedAdmin} />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => { setIsFormOpen(false); setSelectedAdmin(null); setFormData({ name: '', email: '', phone: '', role: 'Admin', password: '' }) }} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {selectedAdmin ? 'Save Changes' : 'Add Admin'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="container mx-auto px-4 py-6">
-        <PageHeader
-          title="Treasury Management"
-          description={`Financial overview and bank management for ${CHURCH.name}`}
-          actions={
-            <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={() => setIsDialogOpen(true)} className="gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
-                <Plus className="w-4 h-4" />
-                Record Transaction
-              </Button>
+    <div className="space-y-6">
+      <PageHeader
+        title="Admin Management"
+        description="Manage admin accounts and permissions"
+        actions={
+          <Button size="sm" onClick={() => { setSelectedAdmin(null); setFormData({ name: '', email: '', phone: '', role: 'Admin', password: '' }); setIsFormOpen(true) }}>
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            Add Admin
+          </Button>
+        }
+      />
 
-              <Dialog open={isReconcileDialogOpen} onOpenChange={setIsReconcileDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <RefreshCcw className="w-4 h-4" />
-                    Reconcile
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Bank Reconciliation</DialogTitle>
-                    <DialogDescription>
-                      Reconcile your bank accounts with the latest statements.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="reconcile-account">Select Account</Label>
-                      <Select defaultValue="KCB Bank">
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select account" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bankAccounts.map(acc => (
-                            <SelectItem key={acc.id} value={acc.bank}>{acc.bank} — {formatKES(acc.balance)}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="statement-balance">Statement Balance (KES)</Label>
-                      <Input id="statement-balance" type="number" placeholder="Enter statement balance" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="reconcile-notes">Reconciliation Notes</Label>
-                      <Textarea id="reconcile-notes" placeholder="Any discrepancies or notes..." rows={3} />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsReconcileDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleReconcile} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
-                      Complete Reconciliation
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard label="Total Admins" value={String(admins.length)} icon={Users} accent="primary" />
+        <StatCard label="Active" value={String(admins.length)} icon={Shield} accent="emerald" />
+        <StatCard label="Roles" value={String(new Set(admins.map(a => a.role)).size)} icon={Shield} accent="amber" />
+      </div>
 
-              <Button variant="outline" className="gap-2">
-                <Download className="w-4 h-4" />
-                Export
-              </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-medium">All Admins</CardTitle>
+          <CardDescription>View and manage admin accounts</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          }
-        />
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <StatCard
-            label="Total Balance"
-            value={formatKES(totalBalance, { compact: true })}
-            icon={Wallet}
-            accent="primary"
-          />
-          <StatCard
-            label="Total Income"
-            value={formatKES(totalIncome, { compact: true })}
-            icon={ArrowUpRight}
-            accent="emerald"
-          />
-          <StatCard
-            label="Total Expenses"
-            value={formatKES(totalExpenses, { compact: true })}
-            icon={ArrowDownRight}
-            accent="amber"
-          />
-          <StatCard
-            label="Net Position"
-            value={formatKES(totalIncome - totalExpenses, { compact: true })}
-            icon={Landmark}
-            accent="teal"
-          />
-          <StatCard
-            label="Accounts"
-            value={String(bankAccounts.length)}
-            icon={Landmark}
-            accent="primary"
-          />
-        </div>
-
-        {isDialogOpen ? (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="gap-2">
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-                <div>
-                  <h2 className="text-lg font-semibold">Record New Transaction</h2>
-                  <p className="text-sm text-muted-foreground">Enter the transaction details below.</p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Transaction Type *</Label>
-                    <Select value={formData.type} onValueChange={(value) => handleSelectChange('type', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Deposit">Deposit</SelectItem>
-                        <SelectItem value="Withdrawal">Withdrawal</SelectItem>
-                        <SelectItem value="Transfer">Transfer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="account">Bank Account *</Label>
-                    <Select value={formData.account} onValueChange={(value) => handleSelectChange('account', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select account" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {bankAccounts.map(acc => (
-                          <SelectItem key={acc.id} value={acc.bank}>{acc.bank} ({acc.type})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Amount (KES) *</Label>
-                    <Input
-                      id="amount"
-                      name="amount"
-                      type="number"
-                      min="0"
-                      value={formData.amount}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
-                    <Select value={formData.category} onValueChange={(value) => handleSelectChange('category', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Income">Income</SelectItem>
-                        <SelectItem value="Tithes">Tithes</SelectItem>
-                        <SelectItem value="Offerings">Offerings</SelectItem>
-                        <SelectItem value="Utilities">Utilities</SelectItem>
-                        <SelectItem value="Pastor Support">Pastor Support</SelectItem>
-                        <SelectItem value="Evangelism">Evangelism</SelectItem>
-                        <SelectItem value="Youth Ministry">Youth Ministry</SelectItem>
-                        <SelectItem value="Welfare">Welfare</SelectItem>
-                        <SelectItem value="Building Projects">Building Projects</SelectItem>
-                        <SelectItem value="Transfer">Transfer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="description">Description *</Label>
-                    <Input
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      placeholder="Transaction description"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="reference">Reference Number</Label>
-                    <Input
-                      id="reference"
-                      name="reference"
-                      value={formData.reference}
-                      onChange={handleInputChange}
-                      placeholder="e.g. Receipt #, Check #"
-                    />
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="notes">Notes</Label>
-                    <Textarea
-                      id="notes"
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleInputChange}
-                      placeholder="Additional notes..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
-                    Save Transaction
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        ) : (
-          <Tabs defaultValue="transactions" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="transactions">Transactions</TabsTrigger>
-              <TabsTrigger value="accounts">Bank Accounts</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="transactions" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <CardTitle className="font-serif">Recent Transactions</CardTitle>
-                      <CardDescription>Latest financial activity across all accounts</CardDescription>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          placeholder="Search transactions..."
-                          value={searchTerm}
-                          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
-                          className="pl-9 w-full sm:w-64"
-                        />
-                      </div>
-                      <Select value={selectedType} onValueChange={(value) => { setSelectedType(value); setCurrentPage(1) }}>
-                        <SelectTrigger className="w-full sm:w-40">
-                          <SelectValue placeholder="Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Types</SelectItem>
-                          <SelectItem value="Deposit">Deposits</SelectItem>
-                          <SelectItem value="Withdrawal">Withdrawals</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedAccount} onValueChange={(value) => { setSelectedAccount(value); setCurrentPage(1) }}>
-                        <SelectTrigger className="w-full sm:w-48">
-                          <SelectValue placeholder="Account" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Accounts</SelectItem>
-                          {bankAccounts.map(acc => (
-                            <SelectItem key={acc.id} value={acc.bank}>{acc.bank}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Account</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead className="text-right">Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedTransactions.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                              No transactions found.
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          paginatedTransactions.map((txn) => (
-                            <TableRow key={txn.id}>
-                              <TableCell className="font-mono text-xs">{txn.id}</TableCell>
-                              <TableCell className="text-sm">{txn.date}</TableCell>
-                              <TableCell className="text-sm font-medium">{txn.description}</TableCell>
-                              <TableCell className="text-sm">{txn.account}</TableCell>
-                              <TableCell className="text-sm">{txn.category}</TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant="secondary"
-                                  className={
-                                    txn.type === 'Deposit'
-                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                      : 'bg-rose-50 text-rose-700 border-rose-200'
-                                  }
-                                >
-                                  {txn.type}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className={`text-right font-semibold text-sm ${txn.type === 'Deposit' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                {txn.type === 'Deposit' ? '+' : '-'}{formatKES(txn.amount)}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4">
-                      <p className="text-sm text-muted-foreground">
-                        Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                          disabled={currentPage === 1}
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          Previous
-                        </Button>
-                        <span className="text-sm text-muted-foreground">
-                          Page {currentPage} of {totalPages}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                          disabled={currentPage === totalPages}
-                        >
-                          Next
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="accounts" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {bankAccounts.map((account) => (
-                  <Card key={account.id} className="border-0 shadow-sm">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-                            <Landmark className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-base font-semibold">{account.bank}</CardTitle>
-                            <CardDescription className="text-xs">{account.type} • {account.branch}</CardDescription>
-                          </div>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {account.accountNumber}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
+          ) : admins.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">No admins found. Add your first admin!</div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {admins.map((admin) => (
+                <Card key={admin.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          {admin.profile_picture ? (
+                            <img src={admin.profile_picture} alt={admin.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <AvatarFallback className="text-sm font-medium">
+                              {admin.name?.charAt(0) || 'A'}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
                         <div>
-                          <p className="text-xs text-muted-foreground">Current Balance</p>
-                          <p className="text-xl font-bold text-gray-800">{formatKES(account.balance)}</p>
-                        </div>
-                        <Separator />
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Account ID</span>
-                          <span className="font-mono text-xs">{account.id}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Branch</span>
-                          <span className="text-xs">{account.branch}</span>
+                          <p className="font-medium text-sm">{admin.name}</p>
+                          <p className="text-xs text-muted-foreground">{admin.email}</p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        )}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        {admin.role}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(admin)}>
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { setSelectedAdmin(admin); setIsDeleteDialogOpen(true) }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Footer */}
-        <footer className="border-t bg-white mt-8">
-          <div className="container mx-auto px-4 py-6 text-center">
-            <p className="text-sm text-gray-500">{CHURCH.system} • {CHURCH.location}</p>
-            <p className="text-xs text-gray-400 mt-1">© {new Date().getFullYear()} {CHURCH.name}. All rights reserved.</p>
-          </div>
-        </footer>
-      </main>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Delete Admin
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-foreground">
+                {selectedAdmin?.name}
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

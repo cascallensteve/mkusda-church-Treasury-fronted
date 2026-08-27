@@ -172,6 +172,12 @@ export const api = {
 
   getTransaction: (id: number) => donationRequest(`/payments/transactions/${id}/`),
 
+  resendReceipt: (transactionId: number) =>
+    donationRequest('/payments/transactions/resend-receipt/', {
+      method: 'POST',
+      body: JSON.stringify({ transaction_id: transactionId }),
+    }),
+
   getDonationStats: () => donationRequest('/payments/stats/donation-types/'),
 }
 
